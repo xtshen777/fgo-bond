@@ -20,6 +20,7 @@ FILES = {
     'nice_servant_cn.json': f'{API}/CN/nice_servant.json',
     'nice_equip_jp.json': f'{API}/JP/nice_equip_lang_en.json',
     'nice_equip_cn.json': f'{API}/CN/nice_equip.json',
+    'NiceUserLevel.json': f'{API}/JP/NiceUserLevel.json',
 }
 
 # 参与判定的特性；2801200 是「カルデアの者」规则里的所罗门专用特性
@@ -116,7 +117,7 @@ def build_servants(cache):
         for group in ('ascension', 'costume'):
             for traits in add.get(group, {}).values():
                 alt |= ({trait_name(t) for t in traits} & TRAITS) - base
-        row = dict(n=n, c=s['className'], r=s['rarity'], zh=cn[n]['name'] if n in cn else '',
+        row = dict(n=n, c=s['className'], r=s['rarity'], cost=s['cost'], zh=cn[n]['name'] if n in cn else '',
                    ja=s['originalName'], en=s['name'], t=sorted(base), a=sorted(alt))
         if n in ZH_NAMES:
             row['zh'], row['k'] = ZH_NAMES[n]
@@ -141,7 +142,7 @@ def build_equips(cache):
             rule = [[trait_name(t) for t in g] for g in f['overWriteTvalsList']]
         else:
             rule = [[trait_name(t)] for t in f['functvals']]
-        row = dict(n=n, ja=e['originalName'], zh=cn[n]['name'] if n in cn else '',
+        row = dict(n=n, cost=e['cost'], ja=e['originalName'], zh=cn[n]['name'] if n in cn else '',
                    rate=val.get('RateCount', 0) / 10, rule=rule)
         if 'AddCount' in val:
             row['flat'] = val['AddCount']
@@ -170,7 +171,9 @@ def main():
     for c in equips:
         c['img'] = e_img[c['n']]
 
-    data = json.dumps(dict(s=servants, ce=equips), ensure_ascii=False, separators=(',', ':'))
+    levels = load(cache, 'NiceUserLevel.json')
+    max_cost = [levels[k]['maxCost'] for k in sorted(levels, key=int)]
+    data = json.dumps(dict(s=servants, ce=equips, lv=max_cost), ensure_ascii=False, separators=(',', ':'))
     page = (ROOT / 'tools' / 'template.html').read_text(encoding='utf8').replace('/*DATA*/', data)
     head, body = page.split('<div class="wrap">', 1)
     (ROOT / 'index.html').write_text(f'{HEAD}{head}</head>\n<body>\n<div class="wrap">{body}</body>\n</html>\n', encoding='utf8')
