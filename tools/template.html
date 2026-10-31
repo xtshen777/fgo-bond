@@ -50,7 +50,9 @@ button { cursor: pointer; }
 .grip { grid-row: span 2; align-self: stretch; border: 0; background: none; color: var(--muted); padding: 0; font-size: 15px; cursor: grab; touch-action: none; }
 .slot-face { touch-action: none; cursor: grab; user-select: none; }
 .fc-face { cursor: grab; user-select: none; }
-.slot.dragging, .fc.dragging { opacity: .35; }
+.slot.dragging, .fc.dragging, .tile.dragging { opacity: .35; }
+.tile.seat:not(.blank) { cursor: grab; touch-action: none; user-select: none; }
+.tile.drop { outline: 2px solid var(--gold); outline-offset: -2px; }
 .slot.drop { outline: 2px solid var(--gold); outline-offset: -1px; }
 .fc.drop .fc-face { outline: 2px solid var(--gold); outline-offset: -2px; }
 .ghost { position: fixed; z-index: 20; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 4px; pointer-events: none; box-shadow: 0 4px 12px rgba(10, 20, 50, .35); }
@@ -86,7 +88,7 @@ button { cursor: pointer; }
 .mini[aria-pressed=true] { background: var(--gold-soft); color: var(--gold); border-color: var(--gold); }
 .settings { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .field { display: grid; gap: 3px; }
-.slotnote { grid-column: 1 / -1; }
+.slotnote, .potfield { grid-column: 1 / -1; }
 .stepper { display: grid; grid-template-columns: 32px 1fr 32px; }
 .stepper button { border: 1px solid var(--line); background: var(--bg); border-radius: 4px; }
 .stepper output { text-align: center; font-family: var(--mono); align-self: center; }
@@ -157,6 +159,7 @@ details summary { cursor: pointer; }
         <label class="field"><span class="label">本的基础羁绊</span><input type="number" id="base" min="0" step="100"></label>
         <label class="field"><span class="label">御主等级</span><input type="number" id="lv" min="1" max="200" placeholder="不限 COST"></label>
         <label class="field"><span class="label">战斗礼装预留 COST</span><input type="number" id="keep" min="0" step="1"></label>
+        <label class="field potfield"><span class="label">茶壶</span><select class="plain" id="pot"><option value="1">不用茶壶</option><option value="2">星见茶壶（羁绊 ×2）</option><option value="3">月见茶壶（羁绊 ×3，活动限定）</option></select></label>
         <div class="label slotnote" id="slotnote"></div>
       </div>
     </section>
@@ -165,7 +168,7 @@ details summary { cursor: pointer; }
       <div class="costline" id="costline"></div>
       <div class="notice" id="notice" hidden></div>
       <div class="group"><h2>编队示意</h2><div class="formation" id="formation"></div>
-        <p class="legend">拖动头像可以交换位置。礼装对全队生效，穿在谁身上都一样。这里优先放在冠位奖励位和后排，前排留给战斗礼装。</p></div>
+        <p class="legend">拖动头像交换英灵位置，拖动礼装调整由谁来带。礼装加成对全队生效，穿在谁身上都一样；放在冠位奖励位的不占 COST。空格写着“COST 不够”时，表示 COST 放不下更多羁绊礼装。</p></div>
       <div class="group" id="supbox" hidden><h2>助战礼装推荐</h2><p class="legend" id="suphint"></p><div class="sup-list" id="suplist"></div></div>
       <div class="tablebox"><table id="table"></table></div>
       <p class="legend"><span class="hit">✓</span> 有加成　<span class="maybe">△</span> 只在部分灵基或灵衣下才符合，未计入　点礼装名可以手动更换</p>
@@ -178,7 +181,7 @@ details summary { cursor: pointer; }
   <footer class="notes">
     计算规则
     <ul>
-      <li>单人羁绊 = 基础羁绊 ×（1 + 礼装加成之和）×（1 + 位置加成）。前排 +20%；助战在前排时，其他 5 人全部再 +4%。</li>
+      <li>单人羁绊 =（基础羁绊 ×（1 + 礼装加成之和）×（1 + 位置加成）+ 固定点数）× 茶壶倍率。前排 +20%；助战在前排时，其他 5 人全部再 +4%。茶壶对全队生效，包括后排，星见 ×2，月见 ×3，一次出击只能用一个。</li>
       <li>羁绊礼装对全队生效，穿在谁身上都一样。总收益随每张礼装独立相加，所以直接挑收益最高的几张就是最优解。</li>
       <li>你自己的每种礼装按 1 张计算。固定点数在百分比之后加算，不乘前排倍率。只在特定活动里有效的羁绊礼装未列入。冠位从者在特殊战斗中可同时带普通礼装和奖励提升礼装，这两格都能放羁绊加成礼装，所以比普通从者多 1 张；专用的羁绊礼装位不影响计算。</li>
       <li>COST = 你的英灵 + 羁绊礼装 + 预留给战斗礼装的部分，上限按御主等级计算。助战不占 COST。官方说明冠位从者的绊礼装位和奖励提升礼装位不占 COST，所以冠位奖励位放 COST 最高的礼装；这个效果只在有冠位编成位的关卡生效。</li>
@@ -219,6 +222,8 @@ const state = {
   base: saved?.base ?? 4000,
   level: saved?.level ?? null,
   keep: saved?.keep ?? 0,
+  pot: saved?.pot ?? 1,
+  seats: null,
   supCe: saved?.supCe ?? (saved?.tea ? [TEATIME] : []),
   missing: saved?.missing ?? [],
   isSample: saved ? false : true,
@@ -251,10 +256,10 @@ function gets(m, c) {
   return !c.self || members().find(x => x.on)?.i === m.i;
 }
 function ceValue(c) {
-  return members().reduce((v, m) => v + (m.on && gets(m, c) ? state.base * mult(m) * c.rate / 100 + (c.flat || 0) : 0), 0);
+  return members().reduce((v, m) => v + (m.on && gets(m, c) ? (state.base * mult(m) * c.rate / 100 + (c.flat || 0)) * state.pot : 0), 0);
 }
 function supValue(c) {
-  return members().reduce((v, m) => v + (m.on && hit(m.s, c) ? state.base * mult(m) * supRate(c) / 100 + supFlat(c) : 0), 0);
+  return members().reduce((v, m) => v + (m.on && hit(m.s, c) ? (state.base * mult(m) * supRate(c) / 100 + supFlat(c)) * state.pot : 0), 0);
 }
 const grandCount = () => members().filter(m => m.grand && !m.sup).length;
 const normalSlots = () => Math.min(state.slots, members().filter(m => !m.sup).length);
@@ -262,8 +267,8 @@ const slotTotal = () => normalSlots() + grandCount();
 const maxCost = () => state.level ? DATA.lv[state.level - 1] : null;
 const servantCost = () => members().reduce((v, m) => v + (m.sup ? 0 : m.s.cost), 0);
 const byCostDesc = list => list.slice().sort((a, b) => ceByNo.get(b).cost - ceByNo.get(a).cost);
-// 冠位奖励位不占 COST，最贵的礼装放进去最划算
-const paidCost = picks => byCostDesc(picks).slice(grandCount()).reduce((v, n) => v + ceByNo.get(n).cost, 0);
+// 只有普通位的礼装占 COST，所以按实际座位算
+const paidCost = picks => [...seating(picks).values()].reduce((v, s) => v + (s.normal ? ceByNo.get(s.normal).cost : 0), 0);
 const usedCost = picks => servantCost() + paidCost(picks) + state.keep;
 function fitCost(items, budget) {
   const paid = normalSlots(), free = grandCount(), seen = {};
@@ -298,22 +303,22 @@ function pct(m, picks) {
 }
 const flat = (m, picks) => picks.reduce((v, n) => { const c = ceByNo.get(n); return v + (c.flat && gets(m, c) ? c.flat : 0); }, 0)
   + supCes().reduce((v, c) => v + (hit(m.s, c) ? supFlat(c) : 0), 0);
-const points = (m, picks) => state.base * (1 + pct(m, picks) / 100) * mult(m) + flat(m, picks);
+const points = (m, picks) => (state.base * (1 + pct(m, picks) / 100) * mult(m) + flat(m, picks)) * state.pot;
 const total = picks => members().reduce((v, m) => v + (m.on ? points(m, picks) : 0), 0);
 const fmt = n => Math.round(n).toLocaleString('zh-CN');
 
-function save() { store('bond-state', { team: state.team, slots: state.slots, base: state.base, level: state.level, keep: state.keep, supCe: state.supCe, missing: state.missing }); }
-function changed() { state.picks = null; state.isSample = false; save(); render(); }
+function save() { store('bond-state', { team: state.team, slots: state.slots, base: state.base, level: state.level, keep: state.keep, pot: state.pot, supCe: state.supCe, missing: state.missing }); }
+function changed() { state.picks = null; state.seats = null; state.isSample = false; save(); render(); }
 
 function swap(a, b) {
   [state.team[a], state.team[b]] = [state.team[b], state.team[a]];
   changed();
 }
-function startDrag(e, from, selector, s) {
+function startDrag(e, from, selector, src, onDrop) {
   if (e.button) return;
   e.preventDefault();
   const items = [...document.querySelectorAll(selector)], ghost = document.createElement('img');
-  ghost.className = 'ghost'; ghost.alt = ''; ghost.src = s.f;
+  ghost.className = 'ghost'; ghost.alt = ''; ghost.src = src;
   document.body.append(ghost);
   items[from].classList.add('dragging');
   let target = -1;
@@ -326,7 +331,7 @@ function startDrag(e, from, selector, s) {
     removeEventListener('pointermove', place); removeEventListener('pointerup', end); removeEventListener('pointercancel', end);
     ghost.remove();
     items.forEach(it => it.classList.remove('dragging', 'drop'));
-    if (ev.type === 'pointerup' && target >= 0 && target !== from) swap(from, target);
+    if (ev.type === 'pointerup' && target >= 0 && target !== from) onDrop(target, items);
   };
   addEventListener('pointermove', place); addEventListener('pointerup', end); addEventListener('pointercancel', end);
   place(e);
@@ -346,7 +351,7 @@ function renderSlots() {
     el.querySelector('img').src = s.f;
     const [g, h, t, x] = el.querySelectorAll('.btns button');
     const grip = el.querySelector('.grip');
-    [grip, el.querySelector('.slot-face')].forEach(o => { o.onpointerdown = e => startDrag(e, i, '.slot', s); });
+    [grip, el.querySelector('.slot-face')].forEach(o => { o.onpointerdown = e => startDrag(e, i, '.slot', s.f, to => swap(i, to)); });
     grip.onkeydown = e => {
       const to = i + (e.key === 'ArrowUp' ? -1 : e.key === 'ArrowDown' ? 1 : 0);
       if (to === i || to < 0 || to > 5) return;
@@ -397,8 +402,9 @@ function el(tag, cls, text) {
   if (text != null) e.textContent = text;
   return e;
 }
-// 礼装穿在谁身上不影响加成：先放冠位奖励位，再放后排，最后放前排
+// 礼装穿在谁身上不影响加成：最贵的先放冠位奖励位，再放后排，最后放前排
 function seating(picks) {
+  if (state.seats) return state.seats;
   const own = members().filter(m => !m.sup), seats = new Map(own.map(m => [m.i, { normal: null, reward: null }]));
   const queue = byCostDesc(picks), normalLeft = { n: normalSlots() };
   own.filter(m => m.grand).forEach(m => { seats.get(m.i).reward = queue.shift() ?? null; });
@@ -406,6 +412,27 @@ function seating(picks) {
     if (normalLeft.n-- > 0) seats.get(m.i).normal = queue.shift() ?? null;
   });
   return seats;
+}
+function moveCe(from, to) {
+  const seats = new Map([...seating(state.picks)].map(([i, s]) => [i, { ...s }]));
+  const [a, ak] = from.split(':'), [b, bk] = to.split(':');
+  const sa = seats.get(+a), sb = seats.get(+b);
+  [sa[ak], sb[bk]] = [sb[bk], sa[ak]];
+  state.seats = seats; render();
+}
+function seatTile(i, kind, seats, tag, blank) {
+  const n = seats.get(i)[kind], t = tile(n, tag, blank);
+  t.classList.add('seat'); t.dataset.seat = `${i}:${kind}`;
+  if (n != null) t.onpointerdown = e => {
+    const from = [...document.querySelectorAll('.seat')].indexOf(t);
+    startDrag(e, from, '.seat', ceByNo.get(n).img, (to, items) => moveCe(t.dataset.seat, items[to].dataset.seat));
+  };
+  return t;
+}
+// 普通位空着的原因不同，提示也不同
+function blankLabel(picks) {
+  if (state.keep > 0 || normalSlots() < members().filter(m => !m.sup).length) return '战斗礼装';
+  return maxCost() != null && picks.length < slotTotal() ? 'COST 不够' : '空';
 }
 function tile(n, tag, blank, rate) {
   if (n == null) return el('div', 'tile blank', blank);
@@ -428,7 +455,7 @@ function renderFormation(picks) {
     if (m.sup) badges.append(el('span', 'pill sup', '助战'));
     face.append(img, badges);
     // 触屏上这里要留给页面滚动，手机用左侧手柄拖动
-    face.onpointerdown = e => { if (e.pointerType !== 'touch') startDrag(e, i, '.fc', m.s); };
+    face.onpointerdown = e => { if (e.pointerType !== 'touch') startDrag(e, i, '.fc', m.s.f, to => swap(i, to)); };
     col.append(face, el('div', 'fc-name', name(m.s)));
     if (m.sup) {
       const [first, second] = supCes();
@@ -436,9 +463,8 @@ function renderFormation(picks) {
       if (m.grand) col.append(tile(second?.n, '奖励位', '奖励位', second && supRateText(second)));
       col.append(el('div', 'fc-total', '—'), el('div', 'fc-pts', '不获得羁绊'));
     } else {
-      const seat = seats.get(i);
-      col.append(tile(seat.normal, null, '战斗礼装'));
-      if (m.grand) col.append(tile(seat.reward, '奖励位', '奖励位'));
+      col.append(seatTile(i, 'normal', seats, null, blankLabel(picks)));
+      if (m.grand) col.append(seatTile(i, 'reward', seats, '奖励位', '奖励位'));
       col.append(el('div', 'fc-total', m.on ? `+${pct(m, picks)}%` : '—'), el('div', 'fc-pts', m.on ? fmt(points(m, picks)) : '不计入'));
     }
     box.append(col);
@@ -476,6 +502,7 @@ function render() {
   document.getElementById('base').value = state.base;
   document.getElementById('lv').value = state.level ?? '';
   document.getElementById('keep').value = state.keep;
+  document.getElementById('pot').value = state.pot;
 
   const hasLunch = owns(ceByNo.get(LUNCH));
   const now = total(picks), bestT = total(best), lunch = total(hasLunch ? [LUNCH] : []);
@@ -497,7 +524,7 @@ function render() {
   if (!notice.hidden) {
     notice.textContent = `手动方案比最优少 ${fmt(bestT - now)} 点。`;
     const r = document.createElement('button'); r.className = 'link'; r.textContent = '恢复最优';
-    r.onclick = () => { state.picks = null; render(); }; notice.append(r);
+    r.onclick = () => { state.picks = null; state.seats = null; render(); }; notice.append(r);
   }
 
   renderFormation(picks);
@@ -516,7 +543,7 @@ function render() {
     th.querySelector('.cond').innerHTML = `${c.cond} <span class="rate">${rateText(c)}</span>`;
     const sel = document.createElement('select'); sel.setAttribute('aria-label', `更换第 ${i + 1} 张礼装`);
     ownedCes().sort((a, b) => ceValue(b) - ceValue(a) || b.rate - a.rate).forEach(o => sel.append(ceOption(o, n, picks)));
-    sel.onchange = () => { state.picks = picks.map((v, j) => j === i ? +sel.value : v); render(); };
+    sel.onchange = () => { state.picks = picks.map((v, j) => j === i ? +sel.value : v); state.seats = null; render(); };
     th.append(sel); head.append(th);
   });
   head.append(Object.assign(document.createElement('th'), { textContent: '总加成' }));
@@ -583,6 +610,7 @@ document.getElementById('sm').onclick = () => { state.slots = Math.max(1, state.
 document.getElementById('sp').onclick = () => { state.slots = Math.min(6, state.slots + 1); changed(); };
 document.getElementById('lv').onchange = e => { const v = Math.round(+e.target.value); state.level = v ? Math.min(200, Math.max(1, v)) : null; changed(); };
 document.getElementById('keep').onchange = e => { state.keep = Math.max(0, Math.round(+e.target.value) || 0); changed(); };
+document.getElementById('pot').onchange = e => { state.pot = +e.target.value; changed(); };
 document.getElementById('base').onchange = e => { state.base = Math.max(0, +e.target.value || 0); changed(); };
 renderOwned();
 render();
