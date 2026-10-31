@@ -53,6 +53,11 @@ button { cursor: pointer; }
 .slot.dragging, .fc.dragging, .tile.dragging { opacity: .35; }
 .tile.seat:not(.blank) { cursor: grab; touch-action: none; user-select: none; }
 .tile.drop { outline: 2px solid var(--gold); outline-offset: -2px; }
+.tile-x { position: absolute; top: 1px; right: 1px; width: 18px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: var(--panel); color: var(--muted); font-size: 13px; line-height: 1; cursor: pointer; }
+.tile-x::after { content: ""; position: absolute; inset: -4px; }
+.tile-x:hover { color: var(--warn); }
+.tile.restore { width: 100%; line-height: 1.3; cursor: pointer; }
+.tile.restore small { display: block; color: var(--accent); }
 .slot.drop { outline: 2px solid var(--gold); outline-offset: -1px; }
 .fc.drop .fc-face { outline: 2px solid var(--gold); outline-offset: -2px; }
 .ghost { position: fixed; z-index: 20; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 4px; pointer-events: none; box-shadow: 0 4px 12px rgba(10, 20, 50, .35); }
@@ -168,7 +173,7 @@ details summary { cursor: pointer; }
       <div class="costline" id="costline"></div>
       <div class="notice" id="notice" hidden></div>
       <div class="group"><h2>编队示意</h2><div class="formation" id="formation"></div>
-        <p class="legend">拖动头像交换英灵位置，拖动礼装调整由谁来带。礼装加成对全队生效，穿在谁身上都一样；放在冠位奖励位的不占 COST。空格写着“COST 不够”时，表示 COST 放不下更多羁绊礼装。</p></div>
+        <p class="legend">拖动头像交换英灵位置，拖动礼装调整由谁来带，点礼装格右上角的 × 指定这个位置不带礼装。礼装加成对全队生效，穿在谁身上都一样；放在冠位奖励位的不占 COST。空格写着“COST 不够”时，表示 COST 放不下更多羁绊礼装。</p></div>
       <div class="group" id="supbox" hidden><h2>助战礼装推荐</h2><p class="legend" id="suphint"></p><div class="sup-list" id="suplist"></div></div>
       <div class="tablebox"><table id="table"></table></div>
       <p class="legend"><span class="hit">✓</span> 有加成　<span class="maybe">△</span> 只在部分灵基或灵衣下才符合，未计入　点礼装名可以手动更换</p>
@@ -241,7 +246,7 @@ const owns = c => !state.missing.includes(c.n);
 const ownedCes = () => ces.filter(owns);
 
 function members() {
-  return state.team.map((t, i) => { const s = t && byNo.get(t.n); return s ? { s, i, front: i < 3, sup: t.sup, grand: t.grand, on: !t.off && !t.sup } : null; }).filter(Boolean);
+  return state.team.map((t, i) => { const s = t && byNo.get(t.n); return s ? { s, i, front: i < 3, sup: t.sup, grand: t.grand, noCe: t.noCe, noReward: t.noReward, on: !t.off && !t.sup } : null; }).filter(Boolean);
 }
 const supporter = () => members().find(m => m.sup);
 const mult = m => 1 + (m.front ? .2 : 0) + (supporter()?.front ? .04 : 0);
@@ -261,8 +266,9 @@ function ceValue(c) {
 function supValue(c) {
   return members().reduce((v, m) => v + (m.on && hit(m.s, c) ? (state.base * mult(m) * supRate(c) / 100 + supFlat(c)) * state.pot : 0), 0);
 }
-const grandCount = () => members().filter(m => m.grand && !m.sup).length;
-const normalSlots = () => Math.min(state.slots, members().filter(m => !m.sup).length);
+const grandCount = () => members().filter(m => m.grand && !m.sup && !m.noReward).length;
+const normalSeats = () => members().filter(m => !m.sup && !m.noCe);
+const normalSlots = () => Math.min(state.slots, normalSeats().length);
 const slotTotal = () => normalSlots() + grandCount();
 const maxCost = () => state.level ? DATA.lv[state.level - 1] : null;
 const servantCost = () => members().reduce((v, m) => v + (m.sup ? 0 : m.s.cost), 0);
@@ -407,8 +413,9 @@ function seating(picks) {
   if (state.seats) return state.seats;
   const own = members().filter(m => !m.sup), seats = new Map(own.map(m => [m.i, { normal: null, reward: null }]));
   const queue = byCostDesc(picks), normalLeft = { n: normalSlots() };
-  own.filter(m => m.grand).forEach(m => { seats.get(m.i).reward = queue.shift() ?? null; });
-  own.filter(m => !m.front).concat(own.filter(m => m.front)).forEach(m => {
+  own.filter(m => m.grand && !m.noReward).forEach(m => { seats.get(m.i).reward = queue.shift() ?? null; });
+  const open = normalSeats();
+  open.filter(m => !m.front).concat(open.filter(m => m.front)).forEach(m => {
     if (normalLeft.n-- > 0) seats.get(m.i).normal = queue.shift() ?? null;
   });
   return seats;
@@ -421,7 +428,18 @@ function moveCe(from, to) {
   state.seats = seats; render();
 }
 function seatTile(i, kind, seats, tag, blank) {
-  const n = seats.get(i)[kind], t = tile(n, tag, blank);
+  const slot = state.team[i], flag = kind === 'normal' ? 'noCe' : 'noReward';
+  if (slot[flag]) {
+    const b = el('button', 'tile blank restore', '不带礼装'); b.type = 'button';
+    b.append(el('small', null, '点击恢复'));
+    b.onclick = () => { slot[flag] = false; changed(); };
+    return b;
+  }
+  const n = seats.get(i)[kind], t = tile(n, tag, blank), x = el('button', 'tile-x', '×');
+  x.type = 'button'; x.setAttribute('aria-label', '这个位置不带礼装');
+  x.onpointerdown = e => e.stopPropagation();
+  x.onclick = () => { slot[flag] = true; changed(); };
+  t.append(x);
   t.classList.add('seat'); t.dataset.seat = `${i}:${kind}`;
   if (n != null) t.onpointerdown = e => {
     const from = [...document.querySelectorAll('.seat')].indexOf(t);
@@ -431,7 +449,7 @@ function seatTile(i, kind, seats, tag, blank) {
 }
 // 普通位空着的原因不同，提示也不同
 function blankLabel(picks) {
-  if (state.keep > 0 || normalSlots() < members().filter(m => !m.sup).length) return '战斗礼装';
+  if (state.keep > 0 || normalSlots() < normalSeats().length) return '战斗礼装';
   return maxCost() != null && picks.length < slotTotal() ? 'COST 不够' : '空';
 }
 function tile(n, tag, blank, rate) {
