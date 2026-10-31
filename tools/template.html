@@ -1,6 +1,7 @@
 <title>FGO 羁绊礼装配装</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap" media="print" onload="this.media='all'">
 <style>
 /* 布局：左侧编队，右侧对照表；窄屏上下堆叠。配色取迦勒底制服的钴蓝加圣杯金。 */
 :root {
@@ -205,8 +206,9 @@ const ALIGN = [['alignmentLawful','秩序'],['alignmentNeutral','中立'],['alig
 const ALIGN2 = [['alignmentGood','善'],['alignmentBalanced','中庸'],['alignmentEvil','恶'],['alignmentMadness','狂'],['alignmentSummer','夏'],['alignmentBride','花嫁']];
 const SAMPLE = [144, 253, 206, 296, 108, 99];
 const LUNCH = 330, TEATIME = 910, TEATIME_SUPPORT = 15;
+DATA.s.forEach(s => { s.f = `img/s/${s.n}.jpg`; });
 const byNo = new Map(DATA.s.map(s => [s.n, s]));
-const ces = DATA.ce.map(c => ({ ...c, cond: COND[c.n] || (c.rule.length ? 'Fate/stay night 从者' : c.self ? '仅 1 人' : '全体') }));
+const ces = DATA.ce.map(c => ({ ...c, img: `img/ce/${c.n}.png`, cond: COND[c.n] || (c.rule.length ? 'Fate/stay night 从者' : c.self ? '仅 1 人' : '全体') }));
 const GROUPS = [
   { title: '条件加成 +20%', test: c => c.rate === 20 },
   { title: '全体加成', test: c => !c.rule.length && c.rate > 2 },
@@ -611,7 +613,7 @@ function renderOwned() {
       const d = document.createElement('span'); d.textContent = ceName(c);
       const s = document.createElement('small'); s.innerHTML = '<span></span> <b></b>';
       s.firstChild.textContent = c.zh ? `${c.cond}｜${c.ja}` : c.cond; s.lastChild.textContent = rateText(c);
-      const pic = document.createElement('img'); pic.className = 'ce-thumb'; pic.alt = ''; pic.src = c.img;
+      const pic = document.createElement('img'); pic.className = 'ce-thumb'; pic.alt = ''; pic.loading = 'lazy'; pic.src = c.img;
       d.append(s); l.append(i, pic, d); grid.append(l);
     });
     wrap.append(head, grid); box.append(wrap);

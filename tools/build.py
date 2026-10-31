@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
-"""从 Atlas Academy 拉取日服数据，生成 ../index.html。
+"""从 Atlas Academy 拉取日服数据，生成 ../index.html 和 ../img/。
 
 用法：python3 tools/build.py [--cache 缓存目录]
 图片缩放依赖 macOS 自带的 sips。已下载的文件会复用，要更新数据时删掉缓存里的 json。
 """
 import argparse
-import base64
 import concurrent.futures
 import json
 import pathlib
+import shutil
 import subprocess
-import tempfile
 import urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -91,17 +90,14 @@ def fetch_images(urls, folder):
         list(pool.map(lambda kv: download(kv[1], folder / f'{kv[0]}.png'), urls.items()))
 
 
-def shrink(folder, size, fmt, opts=()):
-    """把 folder 里的 PNG 缩小，返回 编号 -> data URI。"""
-    with tempfile.TemporaryDirectory() as tmp:
-        files = sorted(str(p) for p in folder.glob('*.png'))
-        subprocess.run(['sips', '-s', 'format', fmt, *opts, '-Z', str(size), *files, '--out', tmp],
-                       check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        mime = {'jpeg': 'image/jpeg', 'png': 'image/png'}[fmt]
-        out = {}
-        for p in pathlib.Path(tmp).iterdir():
-            out[int(p.stem)] = f'data:{mime};base64,' + base64.b64encode(p.read_bytes()).decode()
-        return out
+def shrink(folder, ids, out, size, fmt, opts=()):
+    """把 ids 对应的 PNG 缩小后写入 out，访客只从这里取图，不访问 Atlas Academy。"""
+    shutil.rmtree(out, ignore_errors=True)
+    out.mkdir(parents=True)
+    files = [str(folder / f'{n}.png') for n in ids]
+    subprocess.run(['sips', '-s', 'format', fmt, *opts, '-Z', str(size), *files, '--out', str(out)],
+                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    assert len(list(out.iterdir())) == len(ids), f'{out} 里的图片数量不对'
 
 
 def build_servants(cache):
@@ -164,12 +160,8 @@ def main():
     equips, e_urls = build_equips(cache)
     fetch_images(s_urls, cache / 'faces')
     fetch_images(e_urls, cache / 'equips')
-    s_img = shrink(cache / 'faces', 96, 'jpeg', ('-s', 'formatOptions', '72'))
-    e_img = shrink(cache / 'equips', 72, 'png')
-    for s in servants:
-        s['f'] = s_img[s['n']]
-    for c in equips:
-        c['img'] = e_img[c['n']]
+    shrink(cache / 'faces', s_urls, ROOT / 'img' / 's', 96, 'jpeg', ('-s', 'formatOptions', '72'))
+    shrink(cache / 'equips', e_urls, ROOT / 'img' / 'ce', 72, 'png')
 
     levels = load(cache, 'NiceUserLevel.json')
     max_cost = [levels[k]['maxCost'] for k in sorted(levels, key=int)]

@@ -15,6 +15,6 @@ rm -f .cache/*.json
 python3 tools/build.py
 ```
 
-脚本会重新生成 `index.html`。如果提示缺中文名，把新英灵补到 `tools/build.py` 的 `ZH_NAMES`；新羁绊礼装加到 `EQUIP_IDS`。
+脚本会重新生成 `index.html` 和 `img/`。图片都放在仓库里，访客不会访问 Atlas Academy，只有运行这个脚本时才会下载新增的数据和图片。如果提示缺中文名，把新英灵补到 `tools/build.py` 的 `ZH_NAMES`；新羁绊礼装加到 `EQUIP_IDS`。
 
 页面逻辑和样式在 `tools/template.html`，不要直接改 `index.html`。
