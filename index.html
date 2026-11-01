@@ -20,7 +20,7 @@ img { max-width: 100%; }
 :root {
   --bg: #e6edf8; --panel: #fbfdff; --ink: #10213f; --muted: #465a7c; --line: #c3d1e6; --edge: #6f84a5; --frame: #8fa9cf;
   --accent: #17509f; --accent-soft: #dce8f8; --gold: #775200; --gold-soft: #f5e8c8; --warn: #a33c10; --bond: #b02a5b;
-  --r-gold: #b98a1e; --r-silver: #8c97a8; --r-bronze: #a8683a; --r-grand: #0a7fa8; --r-grand-soft: #bfefff;
+  --r-gold: #b98a1e; --r-silver: #8c97a8; --r-bronze: #a8683a; --r-grand: #0a7fa8; --r-grand-soft: #bfefff; --spark: #c9920f;
   --cut: 14px;
   --display: "Noto Serif SC", "Songti SC", serif;
   --body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -29,12 +29,12 @@ img { max-width: 100%; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #08142b; --panel: #0e1f3d; --ink: #e6f0ff; --muted: #a9bddd; --line: #2a446f; --edge: #6d8dbc; --frame: #3f6cae;
   --accent: #8fd3ff; --accent-soft: #1a3764; --gold: #f2cb6f; --gold-soft: #3a3018; --warn: #ffa577; --bond: #ff9db6;
-  --r-gold: #e3bd62; --r-silver: #c8d0dc; --r-bronze: #c98a5a; --r-grand: #4fd8f0; --r-grand-soft: #0b5f85; color-scheme: dark;
+  --r-gold: #e3bd62; --r-silver: #c8d0dc; --r-bronze: #c98a5a; --r-grand: #4fd8f0; --r-grand-soft: #0b5f85; --spark: #ffffff; color-scheme: dark;
 } }
 :root[data-theme="dark"] {
   --bg: #08142b; --panel: #0e1f3d; --ink: #e6f0ff; --muted: #a9bddd; --line: #2a446f; --edge: #6d8dbc; --frame: #3f6cae;
   --accent: #8fd3ff; --accent-soft: #1a3764; --gold: #f2cb6f; --gold-soft: #3a3018; --warn: #ffa577; --bond: #ff9db6;
-  --r-gold: #e3bd62; --r-silver: #c8d0dc; --r-bronze: #c98a5a; --r-grand: #4fd8f0; --r-grand-soft: #0b5f85; color-scheme: dark;
+  --r-gold: #e3bd62; --r-silver: #c8d0dc; --r-bronze: #c98a5a; --r-grand: #4fd8f0; --r-grand-soft: #0b5f85; --spark: #ffffff; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.5; }
@@ -93,12 +93,13 @@ button { cursor: pointer; }
 .r-silver { --rare: var(--r-silver); }
 .r-bronze { --rare: var(--r-bronze); }
 .is-grand { --rare: var(--r-grand); }
-.fc-face.is-grand { border-width: 3px; box-shadow: inset 0 0 0 2px var(--r-grand-soft); animation: grand-glow 3s ease-in-out infinite; }
+.fc-face.is-grand { border-width: 3px; border-image: linear-gradient(to top right, var(--r-gold) 0%, var(--r-grand) 24%, var(--r-grand) 68%, var(--r-gold) 100%) 1; box-shadow: inset 0 0 0 2px var(--r-grand-soft); animation: grand-glow 3s ease-in-out infinite; }
+.fc-frame { position: relative; }
 .fc-face.is-grand::after { content: ""; position: absolute; inset: -20%; pointer-events: none; background: linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, .6) 50%, transparent 58%); transform: translateX(-70%); animation: grand-sweep 4.5s ease-in-out infinite; }
-.spark { position: absolute; width: 14px; height: 14px; background: #fff; pointer-events: none; opacity: 0; clip-path: polygon(50% 0, 58% 42%, 100% 50%, 58% 58%, 50% 100%, 42% 58%, 0 50%, 42% 42%); filter: drop-shadow(0 0 2px var(--r-grand)); animation: grand-spark 3s ease-in-out infinite; }
-.spark.s1 { top: 18%; right: 10%; }
-.spark.s2 { bottom: 26%; left: 16%; width: 10px; height: 10px; animation-delay: 1.4s; }
-.slot-face.is-grand img { animation: grand-glow 3s ease-in-out infinite; }
+.spark { position: absolute; z-index: 2; width: 18px; height: 18px; background: var(--spark); pointer-events: none; opacity: 0; clip-path: polygon(50% 0, 58% 42%, 100% 50%, 58% 58%, 50% 100%, 42% 58%, 0 50%, 42% 42%); filter: drop-shadow(0 0 2px var(--r-grand)); animation: grand-spark 3s ease-in-out infinite; }
+.spark.s1 { top: -8px; right: -8px; }
+.spark.s2 { top: 9px; right: -5px; width: 10px; height: 10px; animation-delay: 1.4s; }
+.slot-face.is-grand img { border-image: linear-gradient(to top right, var(--r-gold) 0%, var(--r-grand) 24%, var(--r-grand) 68%, var(--r-gold) 100%) 1; animation: grand-glow 3s ease-in-out infinite; }
 @keyframes grand-glow { 0%, 100% { filter: drop-shadow(0 0 1px var(--r-grand)); } 50% { filter: drop-shadow(0 0 5px var(--r-grand)); } }
 @keyframes grand-sweep { 0%, 55% { transform: translateX(-70%); } 100% { transform: translateX(70%); } }
 @keyframes grand-spark { 0%, 100% { opacity: 0; transform: scale(.4) rotate(0); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
@@ -539,10 +540,11 @@ function renderFormation(picks) {
     if (m.grand) badges.append(el('span', 'pill grand', '冠位'));
     if (m.sup) badges.append(el('span', 'pill sup', '助战'));
     face.append(img, badges, el('span', 'fc-rare', `★${m.s.r}`));
-    if (m.grand) face.append(el('i', 'spark s1'), el('i', 'spark s2'));
+    const frame = el('div', 'fc-frame'); frame.append(face);
+    if (m.grand) frame.append(el('i', 'spark s1'), el('i', 'spark s2'));
     // 触屏上这里要留给页面滚动，手机用左侧手柄拖动
     face.onpointerdown = e => { if (e.pointerType !== 'touch') startDrag(e, i, '.fc', m.s.f, to => swap(i, to)); };
-    col.append(face, el('div', 'fc-name', name(m.s)));
+    col.append(frame, el('div', 'fc-name', name(m.s)));
     if (m.sup) {
       const [first, second] = supCes();
       col.append(tile(first?.n, null, '好友礼装', first && supRateText(first)));
