@@ -266,7 +266,7 @@ details summary { cursor: pointer; }
     <ul>
       <li>单人羁绊 =（⌊⌊基础羁绊 ×（1 + 位置加成）⌋ ×（1 + 礼装加成之和）⌋ + 固定点数）× 茶壶倍率，⌊⌋ 表示去掉小数。前排 +20%；助战在前排时，其他 5 人全部再 +4%。茶壶对全队生效，包括后排，星见 ×2，月见 ×3，一次出击只能用一个。</li>
       <li>绊 15 及以上的从者自带职阶技能“夢火の導き”：全队（包括他本人和后排）羁绊 +25%，和礼装加成相加。每名绊 15 从者各加一次，所以 2 名就是全队 +50%；放在助战位无效。</li>
-      <li>日常本职阶不限，也没有冠位礼装位：冠位从者和普通从者一样只带 1 张礼装。冠位战只能编入对应职阶，好友助战也一样；填满空位时只挑这个职阶的从者，冠位按钮这时才生效。</li>
+      <li>日常本职阶不限，也没有冠位礼装位：冠位从者和普通从者一样只带 1 张礼装。冠位战只能编入对应职阶，好友助战也一样；填满空位时只挑这个职阶的从者，冠位按钮这时才生效。Extra 分两类：EX1 是裁、仇、月、盾，EX2 是分、外、伪、兽，同一类别里自己的冠位只有 1 名生效。</li>
       <li>标了主刷时，礼装和空位优先让主刷的羁绊最高，主刷相同时再比全队总和；没标时直接比全队总和。填满空位只考虑羁绊和 COST，不看打手或拐的强度，结果接近最优但不保证绝对最优。</li>
       <li>羁绊礼装对全队生效，穿在谁身上都一样。总收益随每张礼装独立相加，所以直接挑收益最高的几张就是最优解。</li>
       <li>你自己的每种礼装按 1 张计算。固定点数在百分比之后加算，不乘前排倍率。只在特定活动里有效的羁绊礼装未列入。冠位从者在特殊战斗中可同时带普通礼装和奖励提升礼装，这两格都能放羁绊加成礼装，所以比普通从者多 1 张；专用的羁绊礼装位不影响计算。</li>
@@ -286,6 +286,8 @@ const ALIGN = [['alignmentLawful','秩序'],['alignmentNeutral','中立'],['alig
 const ALIGN2 = [['alignmentGood','善'],['alignmentBalanced','中庸'],['alignmentEvil','恶'],['alignmentMadness','狂'],['alignmentSummer','夏'],['alignmentBride','花嫁']];
 const SAMPLE = [144, 253, 206, 296, 108, 99];
 const KNIGHTS = ['saber', 'archer', 'lancer', 'rider', 'caster', 'assassin', 'berserker'];
+const EX_CLASSES = { ex1: ['ruler', 'avenger', 'moonCancer', 'shielder'], ex2: ['alterEgo', 'foreigner', 'pretender', 'beast', 'beastEresh', 'unBeastOlgaMarie'] };
+const questOf = c => KNIGHTS.includes(c) ? c : EX_CLASSES.ex1.includes(c) ? 'ex1' : 'ex2';
 const LUNCH = 330, TEATIME = 910, TEATIME_SUPPORT = 15, FLAME = 25, MAIN_WEIGHT = 1000;
 DATA.s.forEach(s => { s.f = `img/s/${s.n}.jpg`; });
 const byNo = new Map(DATA.s.map(s => [s.n, s]));
@@ -312,7 +314,7 @@ const state = {
   keep: saved?.keep ?? 0,
   pot: saved?.pot ?? 1,
   // 空字符串是日常本；旧存档里标过冠位的队伍，默认当成该职阶的冠位战
-  quest: saved?.quest ?? (saved?.team ?? []).map(toSlot).filter(t => t?.grand).map(t => { const c = byNo.get(t.n)?.c; return KNIGHTS.includes(c) ? c : 'extra'; })[0] ?? '',
+  quest: (saved?.quest === 'extra' ? null : saved?.quest) ?? (saved?.team ?? []).map(toSlot).filter(t => t?.grand).map(t => questOf(byNo.get(t.n)?.c))[0] ?? '',
   seats: null,
   supCe: saved?.supCe ?? (saved?.tea ? [TEATIME] : []),
   missing: saved?.missing ?? [],
@@ -328,11 +330,13 @@ const name = s => s.zh || s.ja;
 const ceName = c => c.zh || c.ja;
 const rateText = c => c.flat ? `+${c.flat} 点` : `+${c.rate}%`;
 const owns = c => !state.missing.includes(c.n);
-const classOk = s => !state.quest || (state.quest === 'extra' ? !KNIGHTS.includes(s.c) : s.c === state.quest);
+const classOk = s => !state.quest || (EX_CLASSES[state.quest] ?? [state.quest]).includes(s.c);
 const ownedCes = () => ces.filter(owns);
 
 function members() {
-  return state.team.map((t, i) => { const s = t && byNo.get(t.n); return s ? { s, i, front: i < 3, sup: t.sup, grand: t.grand && !!state.quest, noCe: t.noCe, noReward: t.noReward, flame: t.flame, main: t.main && !t.sup, on: !t.off && !t.sup } : null; }).filter(Boolean);
+  // Extra 战里同一类别只有 1 名自己的冠位生效
+  const onlyGrand = EX_CLASSES[state.quest] ? state.team.findIndex(t => t?.grand && !t.sup) : -1;
+  return state.team.map((t, i) => { const s = t && byNo.get(t.n); return s ? { s, i, front: i < 3, sup: t.sup, grand: t.grand && !!state.quest && (t.sup || onlyGrand < 0 || onlyGrand === i), noCe: t.noCe, noReward: t.noReward, flame: t.flame, main: t.main && !t.sup, on: !t.off && !t.sup } : null; }).filter(Boolean);
 }
 const supporter = () => members().find(m => m.sup);
 // “不计入”只是不看他的点数，人还在队里，技能照样生效
@@ -854,7 +858,8 @@ cf.onchange = renderResults;
 const questSel = document.getElementById('quest');
 questSel.add(new Option('日常本（职阶不限）', ''));
 KNIGHTS.forEach(c => questSel.add(new Option(`冠位战：${CLASS[c]}阶`, c)));
-questSel.add(new Option('冠位战：Extra 职阶', 'extra'));
+questSel.add(new Option('冠位战：EX1（裁、仇、月、盾）', 'ex1'));
+questSel.add(new Option('冠位战：EX2（分、外、伪、兽）', 'ex2'));
 const rc = document.getElementById('rc');
 [...cf.options].forEach(o => rc.add(new Option(o.text, o.value)));
 // 助战礼装跟着队伍走，换一队时不留旧设置；基础羁绊、茶壶等关卡设置保留
