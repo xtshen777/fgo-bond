@@ -212,6 +212,7 @@ details summary { cursor: pointer; }
         <label class="field"><span class="label">御主等级</span><input type="number" id="lv" min="1" max="200" placeholder="不限 COST"></label>
         <label class="field"><span class="label">战斗礼装预留 COST</span><input type="number" id="keep" min="0" step="1"></label>
         <label class="field potfield"><span class="label">茶壶</span><select class="plain" id="pot"><option value="1">不用茶壶</option><option value="2">星见茶壶（羁绊 ×2）</option><option value="3">月见茶壶（羁绊 ×3，活动限定）</option></select></label>
+        <label class="field potfield"><span class="label">绊 15 从者（夢火の導き）</span><select class="plain" id="flame"><option value="0">队里没有</option><option value="1">自己的从者里有（全队 +25%）</option></select></label>
         <div class="label slotnote" id="slotnote"></div>
       </div>
     </section>
@@ -234,12 +235,13 @@ details summary { cursor: pointer; }
   <footer class="notes">
     计算规则
     <ul>
-      <li>单人羁绊 =（基础羁绊 ×（1 + 礼装加成之和）×（1 + 位置加成）+ 固定点数）× 茶壶倍率。前排 +20%；助战在前排时，其他 5 人全部再 +4%。茶壶对全队生效，包括后排，星见 ×2，月见 ×3，一次出击只能用一个。</li>
+      <li>单人羁绊 =（⌊⌊基础羁绊 ×（1 + 位置加成）⌋ ×（1 + 礼装加成之和）⌋ + 固定点数）× 茶壶倍率，⌊⌋ 表示去掉小数。前排 +20%；助战在前排时，其他 5 人全部再 +4%。茶壶对全队生效，包括后排，星见 ×2，月见 ×3，一次出击只能用一个。</li>
+      <li>绊 15 从者自带职阶技能“夢火の導き”：全队（包括他本人和后排）羁绊 +25%，和礼装加成相加。多名绊 15 从者不叠加，放在助战位无效。</li>
       <li>羁绊礼装对全队生效，穿在谁身上都一样。总收益随每张礼装独立相加，所以直接挑收益最高的几张就是最优解。</li>
       <li>你自己的每种礼装按 1 张计算。固定点数在百分比之后加算，不乘前排倍率。只在特定活动里有效的羁绊礼装未列入。冠位从者在特殊战斗中可同时带普通礼装和奖励提升礼装，这两格都能放羁绊加成礼装，所以比普通从者多 1 张；专用的羁绊礼装位不影响计算。</li>
       <li>COST = 你的英灵 + 羁绊礼装 + 预留给战斗礼装的部分，上限按御主等级计算。助战不占 COST。官方说明冠位从者的绊礼装位和奖励提升礼装位不占 COST，所以冠位奖励位放 COST 最高的礼装；这个效果只在有冠位编成位的关卡生效。</li>
       <li>助战是好友的英灵，不给你增加羁绊，也不占你的礼装位。助战礼装按满破计算，选用后才计入总羁绊，可以和你自己带的礼装相同；下午茶在助战身上是 +15%。冠位助战可以选 2 张。</li>
-      <li>数据和礼装图片来自 Atlas Academy，截至 2026-10-31。叠加公式来自 GamePress 攻略，未在游戏内实测。较新英灵的中文名取自 Mooncell 或按音译补充，尚无译名的礼装显示日文名。</li>
+      <li>数据和礼装图片来自 Atlas Academy，截至 2026-10-31。叠加公式和取整方式已用一次实际结算核对，5 名从者的点数全部一致；固定点数的位置尚未核对。较新英灵的中文名取自 Mooncell 或按音译补充，尚无译名的礼装显示日文名。</li>
     </ul>
     <p>本站是粉丝制作的非官方工具，与 TYPE-MOON、FGO PROJECT、Lasengle、Aniplex 及 Fate/Grand Order 官方没有任何关联，也未获得其授权或认可。游戏名称、图片和数据的版权归各自权利人所有。计算结果仅供参考。如有问题或权利人要求移除内容，请到 <a href="https://github.com/xtshen777/fgo-bond/issues">GitHub Issues</a> 联系。</p>
   </footer>
@@ -252,7 +254,7 @@ const COND = { 1949:'兽科从者', 2020:'活在当下的人类', 2052:'秩序�
 const ALIGN = [['alignmentLawful','秩序'],['alignmentNeutral','中立'],['alignmentChaotic','混沌']];
 const ALIGN2 = [['alignmentGood','善'],['alignmentBalanced','中庸'],['alignmentEvil','恶'],['alignmentMadness','狂'],['alignmentSummer','夏'],['alignmentBride','花嫁']];
 const SAMPLE = [144, 253, 206, 296, 108, 99];
-const LUNCH = 330, TEATIME = 910, TEATIME_SUPPORT = 15;
+const LUNCH = 330, TEATIME = 910, TEATIME_SUPPORT = 15, FLAME = 25;
 DATA.s.forEach(s => { s.f = `img/s/${s.n}.jpg`; });
 const byNo = new Map(DATA.s.map(s => [s.n, s]));
 const ces = DATA.ce.map(c => ({ ...c, img: `img/ce/${c.n}.png`, cond: COND[c.n] || (c.rule.length ? 'Fate/stay night 从者' : c.self ? '仅 1 人' : '全体') }));
@@ -277,6 +279,7 @@ const state = {
   level: saved?.level ?? null,
   keep: saved?.keep ?? 0,
   pot: saved?.pot ?? 1,
+  flame: saved?.flame ?? false,
   seats: null,
   supCe: saved?.supCe ?? (saved?.tea ? [TEATIME] : []),
   missing: saved?.missing ?? [],
@@ -354,11 +357,15 @@ function bestPicks() {
 }
 function pct(m, picks) {
   const sum = picks.reduce((v, n) => { const c = ceByNo.get(n); return v + (hit(m.s, c) ? c.rate : 0); }, 0);
-  return sum + supCes().reduce((v, c) => v + (hit(m.s, c) ? supRate(c) : 0), 0);
+  return sum + supCes().reduce((v, c) => v + (hit(m.s, c) ? supRate(c) : 0), 0) + (state.flame ? FLAME : 0);
 }
 const flat = (m, picks) => picks.reduce((v, n) => { const c = ceByNo.get(n); return v + (c.flat && gets(m, c) ? c.flat : 0); }, 0)
   + supCes().reduce((v, c) => v + (hit(m.s, c) ? supFlat(c) : 0), 0);
-const points = (m, picks) => (state.base * (1 + pct(m, picks) / 100) * mult(m) + flat(m, picks)) * state.pot;
+// 游戏先算位置加成再算礼装，两步都去掉小数，最后才乘茶壶
+const points = (m, picks) => {
+  const placed = Math.floor(state.base * Math.round(mult(m) * 100) / 100 + 1e-9);
+  return (Math.floor(placed * (100 + pct(m, picks)) / 100 + 1e-9) + flat(m, picks)) * state.pot;
+};
 const total = picks => members().reduce((v, m) => v + (m.on ? points(m, picks) : 0), 0);
 const fmt = n => Math.round(n).toLocaleString('zh-CN');
 // 总羁绊从上一个数字滚动到新数字；减少动态效果时直接显示
@@ -380,7 +387,7 @@ function rollTotal(node, to) {
   setTimeout(() => { if (id === rollId) document.querySelector('.big').textContent = fmt(to); }, 500);
 }
 
-function save() { store('bond-state', { team: state.team, slots: state.slots, base: state.base, level: state.level, keep: state.keep, pot: state.pot, supCe: state.supCe, missing: state.missing }); }
+function save() { store('bond-state', { team: state.team, slots: state.slots, base: state.base, level: state.level, keep: state.keep, pot: state.pot, flame: state.flame, supCe: state.supCe, missing: state.missing }); }
 function changed() { state.picks = null; state.seats = null; state.isSample = false; save(); render(); }
 
 function swap(a, b) {
@@ -591,6 +598,7 @@ function render() {
   document.getElementById('lv').value = state.level ?? '';
   document.getElementById('keep').value = state.keep;
   document.getElementById('pot').value = state.pot;
+  document.getElementById('flame').value = state.flame ? '1' : '0';
 
   const hasLunch = owns(ceByNo.get(LUNCH));
   const now = total(picks), bestT = total(best), lunch = total(hasLunch ? [LUNCH] : []);
@@ -700,6 +708,7 @@ document.getElementById('sp').onclick = () => { state.slots = Math.min(6, state.
 document.getElementById('lv').onchange = e => { const v = Math.round(+e.target.value); state.level = v ? Math.min(200, Math.max(1, v)) : null; changed(); };
 document.getElementById('keep').onchange = e => { state.keep = Math.max(0, Math.round(+e.target.value) || 0); changed(); };
 document.getElementById('pot').onchange = e => { state.pot = +e.target.value; changed(); };
+document.getElementById('flame').onchange = e => { state.flame = e.target.value === '1'; changed(); };
 document.getElementById('base').onchange = e => { state.base = Math.max(0, +e.target.value || 0); changed(); };
 const sysDark = matchMedia('(prefers-color-scheme: dark)');
 const isDark = () => (document.documentElement.dataset.theme || (sysDark.matches ? 'dark' : 'light')) === 'dark';
