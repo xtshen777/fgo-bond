@@ -93,7 +93,19 @@ button { cursor: pointer; }
 .r-silver { --rare: var(--r-silver); }
 .r-bronze { --rare: var(--r-bronze); }
 .is-grand { --rare: var(--r-grand); }
-.fc-face.is-grand { border-width: 3px; box-shadow: inset 0 0 0 2px var(--r-grand-soft); }
+.fc-face.is-grand { border-width: 3px; box-shadow: inset 0 0 0 2px var(--r-grand-soft); animation: grand-glow 3s ease-in-out infinite; }
+.fc-face.is-grand::after { content: ""; position: absolute; inset: -20%; pointer-events: none; background: linear-gradient(115deg, transparent 42%, rgba(255, 255, 255, .6) 50%, transparent 58%); transform: translateX(-70%); animation: grand-sweep 4.5s ease-in-out infinite; }
+.spark { position: absolute; width: 14px; height: 14px; background: #fff; pointer-events: none; opacity: 0; clip-path: polygon(50% 0, 58% 42%, 100% 50%, 58% 58%, 50% 100%, 42% 58%, 0 50%, 42% 42%); filter: drop-shadow(0 0 2px var(--r-grand)); animation: grand-spark 3s ease-in-out infinite; }
+.spark.s1 { top: 18%; right: 10%; }
+.spark.s2 { bottom: 26%; left: 16%; width: 10px; height: 10px; animation-delay: 1.4s; }
+.slot-face.is-grand img { animation: grand-glow 3s ease-in-out infinite; }
+@keyframes grand-glow { 0%, 100% { filter: drop-shadow(0 0 1px var(--r-grand)); } 50% { filter: drop-shadow(0 0 5px var(--r-grand)); } }
+@keyframes grand-sweep { 0%, 55% { transform: translateX(-70%); } 100% { transform: translateX(70%); } }
+@keyframes grand-spark { 0%, 100% { opacity: 0; transform: scale(.4) rotate(0); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .fc-face.is-grand, .slot-face.is-grand img, .spark { animation: none; }
+  .fc-face.is-grand::after, .spark { display: none; }
+}
 .slot-face.is-grand img { outline: 1px solid var(--r-grand-soft); outline-offset: -3px; }
 .slot-face .cls { position: absolute; right: -3px; bottom: -3px; width: 17px; height: 17px; font-size: 11px; font-style: normal; }
 .results img { width: 28px; height: 28px; border-radius: 3px; flex: none; }
@@ -527,6 +539,7 @@ function renderFormation(picks) {
     if (m.grand) badges.append(el('span', 'pill grand', '冠位'));
     if (m.sup) badges.append(el('span', 'pill sup', '助战'));
     face.append(img, badges, el('span', 'fc-rare', `★${m.s.r}`));
+    if (m.grand) face.append(el('i', 'spark s1'), el('i', 'spark s2'));
     // 触屏上这里要留给页面滚动，手机用左侧手柄拖动
     face.onpointerdown = e => { if (e.pointerType !== 'touch') startDrag(e, i, '.fc', m.s.f, to => swap(i, to)); };
     col.append(face, el('div', 'fc-name', name(m.s)));
