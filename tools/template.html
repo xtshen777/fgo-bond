@@ -7,7 +7,7 @@
 /* 布局：左侧编队，右侧对照表；窄屏上下堆叠。迦勒底终端风格：切角面板、钴蓝线框，英灵按稀有度描边。 */
 :root {
   --bg: #e6edf8; --panel: #fbfdff; --ink: #10213f; --muted: #465a7c; --line: #c3d1e6; --edge: #6f84a5; --frame: #8fa9cf;
-  --accent: #17509f; --accent-soft: #dce8f8; --gold: #775200; --gold-soft: #f5e8c8; --warn: #a33c10; --bond: #b02a5b; --bond-soft: #f6dce6;
+  --accent: #17509f; --accent-soft: #dce8f8; --gold: #775200; --gold-soft: #f5e8c8; --warn: #a33c10; --bond: #b02a5b;
   --r-gold: #b98a1e; --r-silver: #8c97a8; --r-bronze: #a8683a;
   --cut: 14px;
   --display: "Noto Serif SC", "Songti SC", serif;
@@ -16,12 +16,12 @@
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #08142b; --panel: #0e1f3d; --ink: #e6f0ff; --muted: #a9bddd; --line: #2a446f; --edge: #6d8dbc; --frame: #3f6cae;
-  --accent: #8fd3ff; --accent-soft: #1a3764; --gold: #f2cb6f; --gold-soft: #3a3018; --warn: #ffa577; --bond: #ff9db6; --bond-soft: #40203a;
+  --accent: #8fd3ff; --accent-soft: #1a3764; --gold: #f2cb6f; --gold-soft: #3a3018; --warn: #ffa577; --bond: #ff9db6;
   --r-gold: #e3bd62; --r-silver: #c8d0dc; --r-bronze: #c98a5a; color-scheme: dark;
 } }
 :root[data-theme="dark"] {
   --bg: #08142b; --panel: #0e1f3d; --ink: #e6f0ff; --muted: #a9bddd; --line: #2a446f; --edge: #6d8dbc; --frame: #3f6cae;
-  --accent: #8fd3ff; --accent-soft: #1a3764; --gold: #f2cb6f; --gold-soft: #3a3018; --warn: #ffa577; --bond: #ff9db6; --bond-soft: #40203a;
+  --accent: #8fd3ff; --accent-soft: #1a3764; --gold: #f2cb6f; --gold-soft: #3a3018; --warn: #ffa577; --bond: #ff9db6;
   --r-gold: #e3bd62; --r-silver: #c8d0dc; --r-bronze: #c98a5a; color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -88,8 +88,6 @@ button { cursor: pointer; }
 .fc.off { opacity: .7; }
 .fc-face { position: relative; aspect-ratio: 1; background: var(--accent-soft); border: 2px solid var(--rare, var(--line)); border-radius: 2px; overflow: hidden; }
 .fc-rare { position: absolute; left: 0; bottom: 0; background: var(--panel); color: var(--ink); font-family: var(--mono); font-size: 10.5px; padding: 0 3px; }
-.fc-bar { height: 5px; background: var(--bond-soft); }
-.fc-bar i { display: block; height: 100%; background: var(--bond); }
 .fc-face img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .fc-face.none { border: 1px dashed var(--line); background: none; }
 .fc-badges { position: absolute; top: 2px; left: 2px; display: flex; flex-wrap: wrap; gap: 2px; }
@@ -503,7 +501,6 @@ function tile(n, tag, blank, rate) {
 function renderFormation(picks) {
   const box = document.getElementById('formation'); box.textContent = '';
   const ms = new Map(members().map(m => [m.i, m])), seats = seating(picks);
-  const top = Math.max(1, ...[...ms.values()].filter(m => m.on).map(m => points(m, picks)));
   state.team.forEach((slot, i) => {
     const m = ms.get(i), col = el('div', 'fc');
     if (!m) { col.append(el('div', 'fc-face none'), el('div', 'fc-name', '空位')); box.append(col); return; }
@@ -524,10 +521,7 @@ function renderFormation(picks) {
     } else {
       col.append(seatTile(i, 'normal', seats, null, blankLabel(picks)));
       if (m.grand) col.append(seatTile(i, 'reward', seats, '奖励位', '奖励位'));
-      const bar = el('div', 'fc-bar'), fill = el('i');
-      bar.setAttribute('aria-hidden', 'true'); fill.style.width = m.on ? `${points(m, picks) / top * 100}%` : '0';
-      bar.append(fill);
-      col.append(el('div', 'fc-total', m.on ? `+${pct(m, picks)}%` : '—'), bar, el('div', 'fc-pts', m.on ? fmt(points(m, picks)) : '不计入'));
+      col.append(el('div', 'fc-total', m.on ? `+${pct(m, picks)}%` : '—'), el('div', 'fc-pts', m.on ? fmt(points(m, picks)) : '不计入'));
     }
     box.append(col);
   });
