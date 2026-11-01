@@ -1,38 +1,50 @@
 <title>FGO 羁绊礼装配装</title>
+<script>try { const t = JSON.parse(localStorage.getItem('bond-theme')); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap" media="print" onload="this.media='all'">
 <style>
-/* 布局：左侧编队，右侧对照表；窄屏上下堆叠。配色取迦勒底制服的钴蓝加圣杯金。 */
+/* 布局：左侧编队，右侧对照表；窄屏上下堆叠。迦勒底终端风格：切角面板、钴蓝线框，英灵按稀有度描边。 */
 :root {
-  --bg: #eef1f8; --panel: #fbfcff; --ink: #18213d; --muted: #5a6585; --line: #d3d9e8;
-  --accent: #2c49b0; --accent-soft: #e0e6f7; --gold: #8f6a14; --gold-soft: #f4ead0; --warn: #a3481c;
+  --bg: #e6edf8; --panel: #fbfdff; --ink: #10213f; --muted: #465a7c; --line: #c3d1e6; --edge: #6f84a5; --frame: #8fa9cf;
+  --accent: #17509f; --accent-soft: #dce8f8; --gold: #775200; --gold-soft: #f5e8c8; --warn: #a33c10; --bond: #b02a5b; --bond-soft: #f6dce6;
+  --r-gold: #b98a1e; --r-silver: #8c97a8; --r-bronze: #a8683a;
+  --cut: 14px;
   --display: "Noto Serif SC", "Songti SC", serif;
   --body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0f1526; --panel: #171f35; --ink: #e7ebf7; --muted: #9aa5c4; --line: #2c3654;
-  --accent: #9db1f4; --accent-soft: #24305a; --gold: #e3bd62; --gold-soft: #3a3120; --warn: #ef9a6b; color-scheme: dark;
+  --bg: #08142b; --panel: #0e1f3d; --ink: #e6f0ff; --muted: #a9bddd; --line: #2a446f; --edge: #6d8dbc; --frame: #3f6cae;
+  --accent: #8fd3ff; --accent-soft: #1a3764; --gold: #f2cb6f; --gold-soft: #3a3018; --warn: #ffa577; --bond: #ff9db6; --bond-soft: #40203a;
+  --r-gold: #e3bd62; --r-silver: #c8d0dc; --r-bronze: #c98a5a; color-scheme: dark;
 } }
 :root[data-theme="dark"] {
-  --bg: #0f1526; --panel: #171f35; --ink: #e7ebf7; --muted: #9aa5c4; --line: #2c3654;
-  --accent: #9db1f4; --accent-soft: #24305a; --gold: #e3bd62; --gold-soft: #3a3120; --warn: #ef9a6b; color-scheme: dark;
+  --bg: #08142b; --panel: #0e1f3d; --ink: #e6f0ff; --muted: #a9bddd; --line: #2a446f; --edge: #6d8dbc; --frame: #3f6cae;
+  --accent: #8fd3ff; --accent-soft: #1a3764; --gold: #f2cb6f; --gold-soft: #3a3018; --warn: #ffa577; --bond: #ff9db6; --bond-soft: #40203a;
+  --r-gold: #e3bd62; --r-silver: #c8d0dc; --r-bronze: #c98a5a; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.5; }
 .wrap { max-width: 1180px; margin: 0 auto; padding-block: 24px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 18px; }
+header { display: grid; gap: 2px; padding-bottom: 12px; border-bottom: 1px solid var(--frame); }
+.title-row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+.theme-btn { border: 1px solid var(--edge); background: var(--panel); color: var(--ink); border-radius: 2px; padding: 4px 10px; font-size: 13px; }
+.theme-btn:hover { background: var(--accent-soft); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 header h1 { font-family: var(--display); font-size: 26px; margin: 0; text-wrap: balance; }
 header p { margin: 4px 0 0; color: var(--muted); text-wrap: pretty; }
 header .nb { display: inline-block; }
 header .unofficial { display: inline-block; font-size: 12.5px; padding: 1px 8px; border: 1px solid var(--line); border-radius: 3px; }
 .notes a { color: var(--accent); }
 .cols { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 18px; align-items: start; }
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 14px; min-width: 0; display: grid; gap: 12px; }
+.panel { position: relative; isolation: isolate; background: var(--frame); padding: 15px; min-width: 0; display: grid; gap: 12px; clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut))); }
+.panel::before { content: ""; position: absolute; inset: 1px; z-index: -1; background: var(--panel); clip-path: polygon(0 0, calc(100% - var(--cut)) 0, 100% var(--cut), 100% 100%, var(--cut) 100%, 0 calc(100% - var(--cut))); }
 .label { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
 h2 { font-family: var(--display); font-size: 16px; margin: 0; }
+h2::before { content: ""; display: inline-block; width: 7px; height: 7px; margin: 0 8px 2px 1px; background: var(--accent); transform: rotate(45deg); }
 input, select, button { font: inherit; color: inherit; }
-input[type=search], input[type=number], select.plain { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 4px; background: var(--bg); }
+input[type=search], input[type=number], select.plain { width: 100%; padding: 7px 9px; border: 1px solid var(--edge); border-radius: 2px; background: var(--bg); }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .search { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 6px; position: relative; }
@@ -43,7 +55,7 @@ button { cursor: pointer; }
 .slots { display: grid; gap: 6px; }
 .rowlabel { font-size: 12px; color: var(--muted); margin-top: 4px; }
 .slot { display: grid; grid-template-columns: 18px 40px minmax(0, 1fr); gap: 4px 6px; align-items: center; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; }
-.slot.off { opacity: .55; }
+.slot.off { opacity: .7; }
 .slot.empty { border-style: dashed; color: var(--muted); }
 .cls { width: 26px; height: 26px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); border-radius: 3px; font-weight: 700; font-size: 13px; }
 .slot .name { font-weight: 500; overflow-wrap: anywhere; }
@@ -64,14 +76,20 @@ button { cursor: pointer; }
 .ghost { position: fixed; z-index: 20; width: 56px; height: 56px; margin: -28px 0 0 -28px; border-radius: 4px; pointer-events: none; box-shadow: 0 4px 12px rgba(10, 20, 50, .35); }
 .slot .btns .mini:last-child { margin-left: auto; }
 .slot-face { position: relative; width: 40px; height: 40px; }
-.slot-face img { width: 40px; height: 40px; border-radius: 3px; display: block; }
+.slot-face img { width: 40px; height: 40px; border-radius: 2px; display: block; border: 2px solid var(--rare); }
+.r-gold { --rare: var(--r-gold); }
+.r-silver { --rare: var(--r-silver); }
+.r-bronze { --rare: var(--r-bronze); }
 .slot-face .cls { position: absolute; right: -3px; bottom: -3px; width: 17px; height: 17px; font-size: 11px; font-style: normal; }
 .results img { width: 28px; height: 28px; border-radius: 3px; flex: none; }
 .results small { margin-left: auto; flex: none; }
 .formation { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
 .fc { display: grid; gap: 3px; align-content: start; min-width: 0; text-align: center; }
-.fc.off { opacity: .6; }
-.fc-face { position: relative; aspect-ratio: 1; background: var(--accent-soft); border-radius: 4px; overflow: hidden; }
+.fc.off { opacity: .7; }
+.fc-face { position: relative; aspect-ratio: 1; background: var(--accent-soft); border: 2px solid var(--rare, var(--line)); border-radius: 2px; overflow: hidden; }
+.fc-rare { position: absolute; left: 0; bottom: 0; background: var(--panel); color: var(--ink); font-family: var(--mono); font-size: 10.5px; padding: 0 3px; }
+.fc-bar { height: 5px; background: var(--bond-soft); }
+.fc-bar i { display: block; height: 100%; background: var(--bond); }
 .fc-face img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .fc-face.none { border: 1px dashed var(--line); background: none; }
 .fc-badges { position: absolute; top: 2px; left: 2px; display: flex; flex-wrap: wrap; gap: 2px; }
@@ -84,19 +102,19 @@ button { cursor: pointer; }
 .tile.blank { background: none; border: 1px dashed var(--line); color: var(--muted); font-size: 11px; display: grid; place-items: center; }
 .tile-rate { position: absolute; right: 0; bottom: 0; background: var(--gold-soft); color: var(--gold); font-family: var(--mono); font-size: 11px; padding: 0 3px; border-top-left-radius: 3px; }
 .tile-tag { position: absolute; left: 0; top: 0; background: var(--panel); color: var(--muted); font-size: 10px; padding: 0 3px; border-bottom-right-radius: 3px; }
-.fc-total { font-family: var(--mono); color: var(--gold); font-size: 15px; }
+.fc-total { font-family: var(--mono); color: var(--bond); font-size: 15px; }
 .fc-pts { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
 .sup-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 8px 14px; }
 .sup-item { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; align-items: center; }
 .sup-item small { display: block; color: var(--muted); }
 .sup-item b { color: var(--gold); font-family: var(--mono); font-weight: 500; }
-.mini { border: 1px solid var(--line); background: none; border-radius: 3px; padding: 2px 6px; font-size: 12px; color: var(--muted); }
+.mini { border: 1px solid var(--edge); background: none; border-radius: 2px; padding: 2px 6px; font-size: 12px; color: var(--muted); }
 .mini[aria-pressed=true] { background: var(--gold-soft); color: var(--gold); border-color: var(--gold); }
 .settings { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .field { display: grid; gap: 3px; }
 .slotnote, .potfield { grid-column: 1 / -1; }
 .stepper { display: grid; grid-template-columns: 32px 1fr 32px; }
-.stepper button { border: 1px solid var(--line); background: var(--bg); border-radius: 4px; }
+.stepper button { border: 1px solid var(--edge); background: var(--bg); border-radius: 2px; }
 .stepper output { text-align: center; font-family: var(--mono); align-self: center; }
 .summary { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: baseline; }
 .big { font-family: var(--mono); font-size: 30px; color: var(--gold); font-variant-numeric: tabular-nums; }
@@ -120,7 +138,7 @@ th:nth-last-child(-n+2) { white-space: nowrap; }
 .hit { color: var(--accent); font-weight: 700; }
 .maybe { color: var(--warn); }
 .miss { color: var(--line); }
-tr.off td { opacity: .5; }
+tr.off td { opacity: .7; }
 .num { font-family: var(--mono); white-space: nowrap; }
 tfoot td { font-weight: 500; border-bottom: 0; }
 .legend { color: var(--muted); font-size: 12.5px; }
@@ -146,7 +164,7 @@ details summary { cursor: pointer; }
 
 <div class="wrap">
   <header>
-    <h1>FGO 羁绊礼装配装</h1>
+    <div class="title-row"><h1>FGO 羁绊礼装配装</h1><button class="theme-btn" id="theme" type="button"></button></div>
     <p><span class="nb">选好 6 个英灵，自动算出带哪几张羁绊礼装全队拿得最多。</span><span class="nb">数据为日服，礼装按勾选持有、满破计算。</span></p>
     <p class="unofficial">非官方粉丝工具，与 Fate/Grand Order 官方无关</p>
   </header>
@@ -171,6 +189,7 @@ details summary { cursor: pointer; }
     </section>
     <section class="panel" aria-label="结果">
       <div class="summary" id="summary"></div>
+      <div class="sr" id="live" aria-live="polite"></div>
       <div class="costline" id="costline"></div>
       <div class="notice" id="notice" hidden></div>
       <div class="group"><h2>编队示意</h2><div class="formation" id="formation"></div>
@@ -314,6 +333,24 @@ const flat = (m, picks) => picks.reduce((v, n) => { const c = ceByNo.get(n); ret
 const points = (m, picks) => (state.base * (1 + pct(m, picks) / 100) * mult(m) + flat(m, picks)) * state.pot;
 const total = picks => members().reduce((v, m) => v + (m.on ? points(m, picks) : 0), 0);
 const fmt = n => Math.round(n).toLocaleString('zh-CN');
+// 总羁绊从上一个数字滚动到新数字；减少动态效果时直接显示
+const calm = matchMedia('(prefers-reduced-motion: reduce)');
+let shownTotal = null, rollId = 0;
+function rollTotal(node, to) {
+  const from = shownTotal ?? to, start = performance.now(), id = ++rollId;
+  shownTotal = to;
+  node.textContent = fmt(calm.matches ? to : from);
+  if (calm.matches || from === to) return;
+  const step = now => {
+    if (id !== rollId) return;
+    const t = Math.min(1, (now - start) / 450), eased = 1 - (1 - t) ** 3;
+    document.querySelector('.big').textContent = fmt(from + (to - from) * eased);
+    if (t < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  // 页面在后台时动画帧会暂停，到时间后直接落到最终数字
+  setTimeout(() => { if (id === rollId) document.querySelector('.big').textContent = fmt(to); }, 500);
+}
 
 function save() { store('bond-state', { team: state.team, slots: state.slots, base: state.base, level: state.level, keep: state.keep, pot: state.pot, supCe: state.supCe, missing: state.missing }); }
 function changed() { state.picks = null; state.seats = null; state.isSample = false; save(); render(); }
@@ -354,7 +391,7 @@ function renderSlots() {
     const { off, grand, sup } = slot;
     el.className = 'slot' + (off ? ' off' : '');
     const align = (ALIGN.find(a => s.t.includes(a[0]))?.[1] || '') + (ALIGN2.find(a => s.t.includes(a[0]))?.[1] || '');
-    el.innerHTML = `<button class="grip" type="button" aria-label="第 ${i + 1} 位 ${name(s)}，拖动或按上下方向键调整位置">⠿</button><span class="slot-face"><img alt=""><i class="cls">${CLASS[s.c] || '?'}</i></span><div><div class="name"></div><small>★${s.r}${align ? ' · ' + align : ''}${s.a.length ? ' · 特性随灵基变化' : ''}</small></div><div class="btns"><button class="mini" aria-pressed="${grand}" title="冠位从者多 1 个羁绊礼装位">冠位</button><button class="mini" aria-pressed="${sup}" title="这个位置是好友助战">助战</button><button class="mini" aria-pressed="${off}" title="满羁绊的英灵可以关掉"${sup ? ' disabled' : ''}>不计入</button><button class="mini" aria-label="移除">×</button></div>`;
+    el.innerHTML = `<button class="grip" type="button" aria-label="第 ${i + 1} 位 ${name(s)}，拖动或按上下方向键调整位置">⠿</button><span class="slot-face ${rarity(s)}"><img alt=""><i class="cls">${CLASS[s.c] || '?'}</i></span><div><div class="name"></div><small>★${s.r}${align ? ' · ' + align : ''}${s.a.length ? ' · 特性随灵基变化' : ''}</small></div><div class="btns"><button class="mini" aria-pressed="${grand}" title="冠位从者多 1 个羁绊礼装位">冠位</button><button class="mini" aria-pressed="${sup}" title="这个位置是好友助战">助战</button><button class="mini" aria-pressed="${off}" title="满羁绊的英灵可以关掉"${sup ? ' disabled' : ''}>不计入</button><button class="mini" aria-label="移除">×</button></div>`;
     el.querySelector('.name').textContent = name(s);
     el.querySelector('img').src = s.f;
     const [g, h, t, x] = el.querySelectorAll('.btns button');
@@ -404,6 +441,7 @@ function ceOption(c, cur, picks) {
   return o;
 }
 
+const rarity = s => s.r >= 4 ? 'r-gold' : s.r === 3 ? 'r-silver' : 'r-bronze';
 function el(tag, cls, text) {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
@@ -465,15 +503,16 @@ function tile(n, tag, blank, rate) {
 function renderFormation(picks) {
   const box = document.getElementById('formation'); box.textContent = '';
   const ms = new Map(members().map(m => [m.i, m])), seats = seating(picks);
+  const top = Math.max(1, ...[...ms.values()].filter(m => m.on).map(m => points(m, picks)));
   state.team.forEach((slot, i) => {
     const m = ms.get(i), col = el('div', 'fc');
     if (!m) { col.append(el('div', 'fc-face none'), el('div', 'fc-name', '空位')); box.append(col); return; }
     if (!m.on) col.classList.add('off');
-    const face = el('div', 'fc-face'), img = el('img'), badges = el('div', 'fc-badges');
+    const face = el('div', `fc-face ${rarity(m.s)}`), img = el('img'), badges = el('div', 'fc-badges');
     img.src = m.s.f; img.alt = '';
     if (m.grand) badges.append(el('span', 'pill grand', '冠位'));
     if (m.sup) badges.append(el('span', 'pill sup', '助战'));
-    face.append(img, badges);
+    face.append(img, badges, el('span', 'fc-rare', `★${m.s.r}`));
     // 触屏上这里要留给页面滚动，手机用左侧手柄拖动
     face.onpointerdown = e => { if (e.pointerType !== 'touch') startDrag(e, i, '.fc', m.s.f, to => swap(i, to)); };
     col.append(face, el('div', 'fc-name', name(m.s)));
@@ -485,7 +524,10 @@ function renderFormation(picks) {
     } else {
       col.append(seatTile(i, 'normal', seats, null, blankLabel(picks)));
       if (m.grand) col.append(seatTile(i, 'reward', seats, '奖励位', '奖励位'));
-      col.append(el('div', 'fc-total', m.on ? `+${pct(m, picks)}%` : '—'), el('div', 'fc-pts', m.on ? fmt(points(m, picks)) : '不计入'));
+      const bar = el('div', 'fc-bar'), fill = el('i');
+      bar.setAttribute('aria-hidden', 'true'); fill.style.width = m.on ? `${points(m, picks) / top * 100}%` : '0';
+      bar.append(fill);
+      col.append(el('div', 'fc-total', m.on ? `+${pct(m, picks)}%` : '—'), bar, el('div', 'fc-pts', m.on ? fmt(points(m, picks)) : '不计入'));
     }
     box.append(col);
   });
@@ -528,7 +570,8 @@ function render() {
   const now = total(picks), bestT = total(best), lunch = total(hasLunch ? [LUNCH] : []);
   const sum = document.getElementById('summary');
   sum.innerHTML = '<div><div class="label">全队总羁绊</div><div class="big"></div></div><div class="sub"></div>';
-  sum.querySelector('.big').textContent = fmt(now);
+  rollTotal(sum.querySelector('.big'), now);
+  document.getElementById('live').textContent = `全队总羁绊 ${fmt(now)} 点`;
   sum.querySelector('.sub').textContent = `比${hasLunch ? '只带午餐时光' : '不带羁绊礼装'}多 ${fmt(now - lunch)} 点`;
   if (state.isSample) { const t = document.createElement('div'); t.className = 'sub'; t.textContent = '当前是示例队伍，换成你自己的英灵即可'; sum.append(t); }
 
@@ -632,6 +675,15 @@ document.getElementById('lv').onchange = e => { const v = Math.round(+e.target.v
 document.getElementById('keep').onchange = e => { state.keep = Math.max(0, Math.round(+e.target.value) || 0); changed(); };
 document.getElementById('pot').onchange = e => { state.pot = +e.target.value; changed(); };
 document.getElementById('base').onchange = e => { state.base = Math.max(0, +e.target.value || 0); changed(); };
+const sysDark = matchMedia('(prefers-color-scheme: dark)');
+const isDark = () => (document.documentElement.dataset.theme || (sysDark.matches ? 'dark' : 'light')) === 'dark';
+function themeLabel() { document.getElementById('theme').textContent = isDark() ? '切换到浅色' : '切换到深色'; }
+document.getElementById('theme').onclick = () => {
+  const next = isDark() ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next; store('bond-theme', next); themeLabel();
+};
+sysDark.onchange = themeLabel;
+themeLabel();
 renderOwned();
 render();
 </script>
