@@ -20,7 +20,7 @@ img { max-width: 100%; }
 :root {
   --bg: #e6edf8; --panel: #fbfdff; --ink: #10213f; --muted: #465a7c; --line: #c3d1e6; --edge: #6f84a5; --frame: #8fa9cf;
   --accent: #17509f; --accent-soft: #dce8f8; --gold: #775200; --gold-soft: #f5e8c8; --warn: #a33c10; --bond: #b02a5b;
-  --r-gold: #b98a1e; --r-silver: #8c97a8; --r-bronze: #a8683a;
+  --r-gold: #b98a1e; --r-silver: #8c97a8; --r-bronze: #a8683a; --r-grand: #0a7fa8; --r-grand-soft: #bfefff;
   --cut: 14px;
   --display: "Noto Serif SC", "Songti SC", serif;
   --body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -29,12 +29,12 @@ img { max-width: 100%; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #08142b; --panel: #0e1f3d; --ink: #e6f0ff; --muted: #a9bddd; --line: #2a446f; --edge: #6d8dbc; --frame: #3f6cae;
   --accent: #8fd3ff; --accent-soft: #1a3764; --gold: #f2cb6f; --gold-soft: #3a3018; --warn: #ffa577; --bond: #ff9db6;
-  --r-gold: #e3bd62; --r-silver: #c8d0dc; --r-bronze: #c98a5a; color-scheme: dark;
+  --r-gold: #e3bd62; --r-silver: #c8d0dc; --r-bronze: #c98a5a; --r-grand: #4fd8f0; --r-grand-soft: #0b5f85; color-scheme: dark;
 } }
 :root[data-theme="dark"] {
   --bg: #08142b; --panel: #0e1f3d; --ink: #e6f0ff; --muted: #a9bddd; --line: #2a446f; --edge: #6d8dbc; --frame: #3f6cae;
   --accent: #8fd3ff; --accent-soft: #1a3764; --gold: #f2cb6f; --gold-soft: #3a3018; --warn: #ffa577; --bond: #ff9db6;
-  --r-gold: #e3bd62; --r-silver: #c8d0dc; --r-bronze: #c98a5a; color-scheme: dark;
+  --r-gold: #e3bd62; --r-silver: #c8d0dc; --r-bronze: #c98a5a; --r-grand: #4fd8f0; --r-grand-soft: #0b5f85; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; line-height: 1.5; }
@@ -92,6 +92,9 @@ button { cursor: pointer; }
 .r-gold { --rare: var(--r-gold); }
 .r-silver { --rare: var(--r-silver); }
 .r-bronze { --rare: var(--r-bronze); }
+.is-grand { --rare: var(--r-grand); }
+.fc-face.is-grand { border-width: 3px; box-shadow: inset 0 0 0 2px var(--r-grand-soft); }
+.slot-face.is-grand img { outline: 1px solid var(--r-grand-soft); outline-offset: -3px; }
 .slot-face .cls { position: absolute; right: -3px; bottom: -3px; width: 17px; height: 17px; font-size: 11px; font-style: normal; }
 .results img { width: 28px; height: 28px; border-radius: 3px; flex: none; }
 .results small { margin-left: auto; flex: none; }
@@ -104,7 +107,7 @@ button { cursor: pointer; }
 .fc-face.none { border: 1px dashed var(--line); background: none; }
 .fc-badges { position: absolute; top: 2px; left: 2px; display: flex; flex-wrap: wrap; gap: 2px; }
 .pill { font-size: 10.5px; line-height: 1.4; padding: 0 4px; border-radius: 2px; font-weight: 700; }
-.pill.grand { background: var(--gold); color: var(--panel); }
+.pill.grand { background: var(--r-grand); color: var(--panel); }
 .pill.sup { background: var(--accent); color: var(--panel); }
 .fc-name { font-size: 11.5px; line-height: 1.25; min-height: 2.5em; overflow-wrap: anywhere; }
 .tile { position: relative; height: 46px; border-radius: 3px; overflow: hidden; background: var(--accent-soft); }
@@ -403,7 +406,7 @@ function renderSlots() {
     const { off, grand, sup } = slot;
     el.className = 'slot' + (off ? ' off' : '');
     const align = (ALIGN.find(a => s.t.includes(a[0]))?.[1] || '') + (ALIGN2.find(a => s.t.includes(a[0]))?.[1] || '');
-    el.innerHTML = `<button class="grip" type="button" aria-label="第 ${i + 1} 位 ${name(s)}，拖动或按上下方向键调整位置">⠿</button><span class="slot-face ${rarity(s)}"><img alt=""><i class="cls">${CLASS[s.c] || '?'}</i></span><div><div class="name"></div><small>★${s.r}${align ? ' · ' + align : ''}${s.a.length ? ' · 特性随灵基变化' : ''}</small></div><div class="btns"><button class="mini" aria-pressed="${grand}" title="冠位从者多 1 个羁绊礼装位">冠位</button><button class="mini" aria-pressed="${sup}" title="这个位置是好友助战">助战</button><button class="mini" aria-pressed="${off}" title="满羁绊的英灵可以关掉"${sup ? ' disabled' : ''}>不计入</button><button class="mini" aria-label="移除">×</button></div>`;
+    el.innerHTML = `<button class="grip" type="button" aria-label="第 ${i + 1} 位 ${name(s)}，拖动或按上下方向键调整位置">⠿</button><span class="slot-face ${rarity(s)}${grand ? ' is-grand' : ''}"><img alt=""><i class="cls">${CLASS[s.c] || '?'}</i></span><div><div class="name"></div><small>★${s.r}${align ? ' · ' + align : ''}${s.a.length ? ' · 特性随灵基变化' : ''}</small></div><div class="btns"><button class="mini" aria-pressed="${grand}" title="冠位从者多 1 个羁绊礼装位">冠位</button><button class="mini" aria-pressed="${sup}" title="这个位置是好友助战">助战</button><button class="mini" aria-pressed="${off}" title="满羁绊的英灵可以关掉"${sup ? ' disabled' : ''}>不计入</button><button class="mini" aria-label="移除">×</button></div>`;
     el.querySelector('.name').textContent = name(s);
     el.querySelector('img').src = s.f;
     const [g, h, t, x] = el.querySelectorAll('.btns button');
@@ -519,7 +522,7 @@ function renderFormation(picks) {
     const m = ms.get(i), col = el('div', 'fc');
     if (!m) { col.append(el('div', 'fc-face none'), el('div', 'fc-name', '空位')); box.append(col); return; }
     if (!m.on) col.classList.add('off');
-    const face = el('div', `fc-face ${rarity(m.s)}`), img = el('img'), badges = el('div', 'fc-badges');
+    const face = el('div', `fc-face ${rarity(m.s)}${m.grand ? ' is-grand' : ''}`), img = el('img'), badges = el('div', 'fc-badges');
     img.src = m.s.f; img.alt = '';
     if (m.grand) badges.append(el('span', 'pill grand', '冠位'));
     if (m.sup) badges.append(el('span', 'pill sup', '助战'));
