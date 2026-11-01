@@ -254,6 +254,7 @@ details summary { cursor: pointer; }
         <label class="field"><span class="label">御主等级</span><input type="number" id="lv" min="1" max="200" placeholder="不限 COST"></label>
         <label class="field"><span class="label">战斗礼装预留 COST</span><input type="number" id="keep" min="0" step="1"></label>
         <label class="field potfield"><span class="label">茶壶</span><select class="plain" id="pot"><option value="1">不用茶壶</option><option value="2">星见茶壶（羁绊 ×2）</option><option value="3">月见茶壶（羁绊 ×3，活动限定）</option></select></label>
+        <label class="field potfield"><span class="label">关卡类型</span><select class="plain" id="quest"></select></label>
         <div class="label slotnote" id="slotnote"></div>
       </div>
     </section>
@@ -279,6 +280,7 @@ details summary { cursor: pointer; }
     <ul>
       <li>单人羁绊 =（⌊⌊基础羁绊 ×（1 + 位置加成）⌋ ×（1 + 礼装加成之和）⌋ + 固定点数）× 茶壶倍率，⌊⌋ 表示去掉小数。前排 +20%；助战在前排时，其他 5 人全部再 +4%。茶壶对全队生效，包括后排，星见 ×2，月见 ×3，一次出击只能用一个。</li>
       <li>绊 15 及以上的从者自带职阶技能“夢火の導き”：全队（包括他本人和后排）羁绊 +25%，和礼装加成相加。每名绊 15 从者各加一次，所以 2 名就是全队 +50%；放在助战位无效。</li>
+      <li>日常本职阶不限，也没有冠位礼装位：冠位从者和普通从者一样只带 1 张礼装。冠位战只能编入对应职阶，好友助战也一样；填满空位时只挑这个职阶的从者，冠位按钮这时才生效。</li>
       <li>标了主刷时，礼装和空位优先让主刷的羁绊最高，主刷相同时再比全队总和；没标时直接比全队总和。填满空位只考虑羁绊和 COST，不看打手或拐的强度，结果接近最优但不保证绝对最优。</li>
       <li>羁绊礼装对全队生效，穿在谁身上都一样。总收益随每张礼装独立相加，所以直接挑收益最高的几张就是最优解。</li>
       <li>你自己的每种礼装按 1 张计算。固定点数在百分比之后加算，不乘前排倍率。只在特定活动里有效的羁绊礼装未列入。冠位从者在特殊战斗中可同时带普通礼装和奖励提升礼装，这两格都能放羁绊加成礼装，所以比普通从者多 1 张；专用的羁绊礼装位不影响计算。</li>
@@ -297,6 +299,7 @@ const COND = { 1949:'兽科从者', 2020:'活在当下的人类', 2052:'秩序�
 const ALIGN = [['alignmentLawful','秩序'],['alignmentNeutral','中立'],['alignmentChaotic','混沌']];
 const ALIGN2 = [['alignmentGood','善'],['alignmentBalanced','中庸'],['alignmentEvil','恶'],['alignmentMadness','狂'],['alignmentSummer','夏'],['alignmentBride','花嫁']];
 const SAMPLE = [144, 253, 206, 296, 108, 99];
+const KNIGHTS = ['saber', 'archer', 'lancer', 'rider', 'caster', 'assassin', 'berserker'];
 const LUNCH = 330, TEATIME = 910, TEATIME_SUPPORT = 15, FLAME = 25, MAIN_WEIGHT = 1000;
 DATA.s.forEach(s => { s.f = `img/s/${s.n}.jpg`; });
 const byNo = new Map(DATA.s.map(s => [s.n, s]));
@@ -322,6 +325,8 @@ const state = {
   level: saved?.level ?? null,
   keep: saved?.keep ?? 0,
   pot: saved?.pot ?? 1,
+  // 空字符串是日常本；旧存档里标过冠位的队伍，默认当成该职阶的冠位战
+  quest: saved?.quest ?? (saved?.team ?? []).map(toSlot).filter(t => t?.grand).map(t => { const c = byNo.get(t.n)?.c; return KNIGHTS.includes(c) ? c : 'extra'; })[0] ?? '',
   seats: null,
   supCe: saved?.supCe ?? (saved?.tea ? [TEATIME] : []),
   missing: saved?.missing ?? [],
@@ -337,10 +342,11 @@ const name = s => s.zh || s.ja;
 const ceName = c => c.zh || c.ja;
 const rateText = c => c.flat ? `+${c.flat} 点` : `+${c.rate}%`;
 const owns = c => !state.missing.includes(c.n);
+const classOk = s => !state.quest || (state.quest === 'extra' ? !KNIGHTS.includes(s.c) : s.c === state.quest);
 const ownedCes = () => ces.filter(owns);
 
 function members() {
-  return state.team.map((t, i) => { const s = t && byNo.get(t.n); return s ? { s, i, front: i < 3, sup: t.sup, grand: t.grand, noCe: t.noCe, noReward: t.noReward, flame: t.flame, main: t.main && !t.sup, on: !t.off && !t.sup } : null; }).filter(Boolean);
+  return state.team.map((t, i) => { const s = t && byNo.get(t.n); return s ? { s, i, front: i < 3, sup: t.sup, grand: t.grand && !!state.quest, noCe: t.noCe, noReward: t.noReward, flame: t.flame, main: t.main && !t.sup, on: !t.off && !t.sup } : null; }).filter(Boolean);
 }
 const supporter = () => members().find(m => m.sup);
 // “不计入”只是不看他的点数，人还在队里，技能照样生效
@@ -436,7 +442,7 @@ function rollTotal(node, to) {
 const roster = store('bond-roster') || {};
 const rosterOf = n => roster[n] || 0;
 const saveRoster = () => store('bond-roster', roster);
-function save() { store('bond-state', { team: state.team, slots: state.slots, base: state.base, level: state.level, keep: state.keep, pot: state.pot, supCe: state.supCe, missing: state.missing }); }
+function save() { store('bond-state', { team: state.team, slots: state.slots, base: state.base, level: state.level, keep: state.keep, pot: state.pot, quest: state.quest, supCe: state.supCe, missing: state.missing }); }
 function changed() { state.picks = null; state.seats = null; state.isSample = false; save(); render(); }
 
 function swap(a, b) {
@@ -472,10 +478,10 @@ function renderSlots() {
     if (i === 0 || i === 3) { const l = document.createElement('div'); l.className = 'rowlabel'; l.textContent = i === 0 ? '前排（羁绊 +20%）' : '后排'; box.append(l); }
     const s = slot && byNo.get(slot.n), el = document.createElement('div');
     if (!s) { el.className = 'slot empty'; el.innerHTML = '<span></span><span class="cls"></span><span>空位，在上方搜索添加</span>'; box.append(el); return; }
-    const { off, grand, sup, flame, main, auto } = slot;
+    const { off, sup, flame, main, auto } = slot, grand = !!slot.grand && !!state.quest;
     el.className = 'slot' + (off ? ' off' : '');
     const align = (ALIGN.find(a => s.t.includes(a[0]))?.[1] || '') + (ALIGN2.find(a => s.t.includes(a[0]))?.[1] || '');
-    el.innerHTML = `<button class="grip" type="button" aria-label="第 ${i + 1} 位 ${name(s)}，拖动或按上下方向键调整位置">⠿</button><span class="slot-face ${rarity(s)}${grand ? ' is-grand' : ''}"><img alt=""><i class="cls">${CLASS[s.c] || '?'}</i></span><div><div class="name"></div><small>★${s.r}${align ? ' · ' + align : ''}${s.a.length ? ' · 特性随灵基变化' : ''}${auto ? ' · 自动填入' : ''}</small></div><div class="btns"><button class="mini" aria-pressed="${grand}" title="冠位从者多 1 个羁绊礼装位">冠位</button><button class="mini" aria-pressed="${sup}" title="这个位置是好友助战">助战</button><button class="mini" aria-pressed="${!sup && !!main}" title="这一队主要想刷他的羁绊"${sup ? ' disabled' : ''}>主刷</button><button class="mini" aria-pressed="${!sup && !!flame}" title="绊 15 及以上：全队羁绊 +25%，每人各加一次，助战无效"${sup ? ' disabled' : ''}>绊15</button><button class="mini" aria-pressed="${off}" title="满羁绊的英灵可以关掉"${sup ? ' disabled' : ''}>不计入</button>${auto ? '<button class="mini" title="再次填满空位时保留他">留下</button>' : ''}<button class="mini" aria-label="移除">×</button></div>`;
+    el.innerHTML = `<button class="grip" type="button" aria-label="第 ${i + 1} 位 ${name(s)}，拖动或按上下方向键调整位置">⠿</button><span class="slot-face ${rarity(s)}${grand ? ' is-grand' : ''}"><img alt=""><i class="cls">${CLASS[s.c] || '?'}</i></span><div><div class="name"></div><small>★${s.r}${align ? ' · ' + align : ''}${s.a.length ? ' · 特性随灵基变化' : ''}${auto ? ' · 自动填入' : ''}</small></div><div class="btns"><button class="mini" aria-pressed="${grand}" title="${state.quest ? '冠位从者多 1 个羁绊礼装位' : '日常本没有冠位礼装位，选冠位战后才能用'}"${state.quest ? '' : ' disabled'}>冠位</button><button class="mini" aria-pressed="${sup}" title="这个位置是好友助战">助战</button><button class="mini" aria-pressed="${!sup && !!main}" title="这一队主要想刷他的羁绊"${sup ? ' disabled' : ''}>主刷</button><button class="mini" aria-pressed="${!sup && !!flame}" title="绊 15 及以上：全队羁绊 +25%，每人各加一次，助战无效"${sup ? ' disabled' : ''}>绊15</button><button class="mini" aria-pressed="${off}" title="满羁绊的英灵可以关掉"${sup ? ' disabled' : ''}>不计入</button>${auto ? '<button class="mini" title="再次填满空位时保留他">留下</button>' : ''}<button class="mini" aria-label="移除">×</button></div>`;
     el.querySelector('.name').textContent = name(s);
     el.querySelector('img').src = s.f;
     const btns = [...el.querySelectorAll('.btns button')];
@@ -646,11 +652,12 @@ function render() {
   const picks = state.picks, ms = members();
   renderSlots();
   document.getElementById('sn').textContent = state.slots;
-  document.getElementById('slotnote').textContent = grandCount() ? `共 ${slotTotal()} 张：普通 ${normalSlots()} 张 + 冠位从者 ${grandCount()} 张` : `共 ${slotTotal()} 张。标记冠位从者每人多 1 张，助战不占你的礼装位`;
+  document.getElementById('slotnote').textContent = grandCount() ? `共 ${slotTotal()} 张：普通 ${normalSlots()} 张 + 冠位从者 ${grandCount()} 张` : `共 ${slotTotal()} 张。${state.quest ? '标记冠位从者每人多 1 张，' : ''}助战不占你的礼装位`;
   document.getElementById('base').value = state.base;
   document.getElementById('lv').value = state.level ?? '';
   document.getElementById('keep').value = state.keep;
   document.getElementById('pot').value = state.pot;
+  document.getElementById('quest').value = state.quest;
 
   const hasLunch = owns(ceByNo.get(LUNCH));
   const now = total(picks), bestT = total(best), lunch = total(hasLunch ? [LUNCH] : []);
@@ -759,9 +766,9 @@ function fillSeats() {
   const taken = new Set(state.team.filter(t => t && !t.sup).map(t => t.n));
   // COST 和吃到的礼装都相同的从者对结果没有区别，每种留够座位数就行
   const seen = {}, owned = ownedCes();
-  const pool = DATA.s.filter(s => rosterOf(s.n) === 1 && !taken.has(s.n)).sort((a, b) => a.cost - b.cost)
+  const pool = DATA.s.filter(s => rosterOf(s.n) === 1 && !taken.has(s.n) && classOk(s)).sort((a, b) => a.cost - b.cost)
     .filter(s => { const k = s.cost + owned.map(c => +hit(s, c)).join(''); return (seen[k] = (seen[k] || 0) + 1) <= seats.length; });
-  if (!pool.length) { changed(); note('“我的从者”里还没有可用的从者，先去那一页标记“已有”。'); return; }
+  if (!pool.length) { changed(); note(state.quest ? '“我的从者”里没有这个职阶的可用从者。' : '“我的从者”里还没有可用的从者，先去那一页标记“已有”。'); return; }
   const cap = maxCost();
   const place = (i, s) => { state.team[i] = s ? { n: s.n, off: false, grand: false, sup: false, auto: true } : null; };
   const bestFor = (i, reserve) => {
@@ -787,8 +794,8 @@ function fillSeats() {
   const order = seats.map(i => state.team[i]).sort((a, b) => rank(b) - rank(a));
   seats.forEach((i, k) => { state.team[i] = order[k]; });
   changed();
-  const short = seats.filter(i => !state.team[i]).length;
-  note(short ? `COST 或可选从者不够，还有 ${short} 个空位没填上。` : `已填入 ${seats.length} 名从者。${members().some(m => m.main) ? '' : '没有标主刷，按全队总和挑选。'}`);
+  const short = seats.filter(i => !state.team[i]).length, wrong = members().filter(m => !classOk(m.s)).length;
+  note((short ? `COST 或可选从者不够，还有 ${short} 个空位没填上。` : `已填入 ${seats.length} 名从者。${members().some(m => m.main) ? '' : '没有标主刷，按全队总和挑选。'}`) + (wrong ? `队里有 ${wrong} 名从者不是这个职阶，进不了这一关。` : ''));
 }
 document.getElementById('fill').onclick = fillSeats;
 
@@ -858,6 +865,10 @@ cf.add(new Option('全部职阶', ''));
 [...new Set(DATA.s.map(s => s.c))].forEach(c => { if (!c.includes('Beast') && !c.includes('Eresh')) cf.add(new Option(CLASS[c] + '阶', c)); });
 document.getElementById('q').oninput = renderResults;
 cf.onchange = renderResults;
+const questSel = document.getElementById('quest');
+questSel.add(new Option('日常本（职阶不限）', ''));
+KNIGHTS.forEach(c => questSel.add(new Option(`冠位战：${CLASS[c]}阶`, c)));
+questSel.add(new Option('冠位战：Extra 职阶', 'extra'));
 const rc = document.getElementById('rc');
 [...cf.options].forEach(o => rc.add(new Option(o.text, o.value)));
 // 助战礼装跟着队伍走，换一队时不留旧设置；基础羁绊、茶壶等关卡设置保留
@@ -866,6 +877,7 @@ document.getElementById('sm').onclick = () => { state.slots = Math.max(1, state.
 document.getElementById('sp').onclick = () => { state.slots = Math.min(6, state.slots + 1); changed(); };
 document.getElementById('lv').onchange = e => { const v = Math.round(+e.target.value); state.level = v ? Math.min(200, Math.max(1, v)) : null; changed(); };
 document.getElementById('keep').onchange = e => { state.keep = Math.max(0, Math.round(+e.target.value) || 0); changed(); };
+document.getElementById('quest').onchange = e => { state.quest = e.target.value; changed(); };
 document.getElementById('pot').onchange = e => { state.pot = +e.target.value; changed(); };
 document.getElementById('base').onchange = e => { state.base = Math.max(0, +e.target.value || 0); changed(); };
 const sysDark = matchMedia('(prefers-color-scheme: dark)');
