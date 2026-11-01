@@ -204,6 +204,7 @@ details summary { cursor: pointer; }
   <nav class="tabs" role="tablist" aria-label="页面">
     <button type="button" role="tab" id="tab-team" aria-selected="true" aria-controls="page-team">配队</button>
     <button type="button" role="tab" id="tab-roster" aria-selected="false" aria-controls="page-roster">我的从者</button>
+    <button type="button" role="tab" id="tab-owned" aria-selected="false" aria-controls="page-owned">我的礼装</button>
   </nav>
   <section class="panel" id="page-roster" role="tabpanel" aria-labelledby="tab-roster" hidden>
     <div class="team-head"><h2>我的从者</h2><span class="label" id="rcount"></span></div>
@@ -221,8 +222,7 @@ details summary { cursor: pointer; }
       <div class="r-bulk"><button class="mini" type="button" id="rexport">导出</button><button class="mini" type="button" id="rimport">导入</button><span class="label" id="rmsg" role="status"></span></div></div>
     </details>
   </section>
-  <div id="page-team" role="tabpanel" aria-labelledby="tab-team" class="group" style="gap:18px">
-  <div class="cols">
+  <div class="cols" id="page-team" role="tabpanel" aria-labelledby="tab-team">
     <section class="panel" aria-label="编队">
       <div class="team-head"><h2>编队</h2><button class="mini" id="clear" type="button" title="移除全部英灵，并清掉助战礼装">清空编队</button></div>
       <div class="search">
@@ -256,11 +256,10 @@ details summary { cursor: pointer; }
       <p class="legend"><span class="hit">✓</span> 有加成　<span class="maybe">△</span> 只在部分灵基或灵衣下才符合，未计入　点礼装名可以手动更换</p>
     </section>
   </div>
-  <section class="panel" aria-label="我的礼装">
+  <section class="panel" id="page-owned" role="tabpanel" aria-labelledby="tab-owned" hidden>
     <div class="own-head"><h2>我的礼装</h2><span class="label" id="owncount"></span></div>
     <div id="owned" class="group" style="gap:14px"></div>
   </section>
-  </div>
   <footer class="notes">
     计算规则
     <ul>
@@ -790,7 +789,7 @@ function fillSeats() {
 document.getElementById('fill').onclick = fillSeats;
 
 function showTab(tab) {
-  [['team', 'page-team'], ['roster', 'page-roster']].forEach(([t, p]) => {
+  [['team', 'page-team'], ['roster', 'page-roster'], ['owned', 'page-owned']].forEach(([t, p]) => {
     document.getElementById('tab-' + t).setAttribute('aria-selected', t === tab);
     document.getElementById(p).hidden = t !== tab;
   });
@@ -798,6 +797,7 @@ function showTab(tab) {
 }
 document.getElementById('tab-team').onclick = () => showTab('team');
 document.getElementById('tab-roster').onclick = () => showTab('roster');
+document.getElementById('tab-owned').onclick = () => showTab('owned');
 
 const ROSTER_TEXT = ['没有', '已有', '满绊'];
 const rosterTiles = new Map();
