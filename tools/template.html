@@ -59,7 +59,7 @@ button { cursor: pointer; }
 .slot.empty { border-style: dashed; color: var(--muted); }
 .cls { width: 26px; height: 26px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); border-radius: 3px; font-weight: 700; font-size: 13px; }
 .slot .name { font-weight: 500; overflow-wrap: anywhere; }
-.slot .btns { display: flex; gap: 4px; grid-column: 3; }
+.slot .btns { display: flex; flex-wrap: wrap; gap: 4px; grid-column: 3; }
 .grip { grid-row: span 2; align-self: stretch; border: 0; background: none; color: var(--muted); padding: 0; font-size: 15px; cursor: grab; touch-action: none; }
 .slot-face { touch-action: none; cursor: grab; user-select: none; }
 .fc-face { cursor: grab; user-select: none; }
@@ -158,6 +158,24 @@ tfoot td { font-weight: 500; border-bottom: 0; }
 .legend { color: var(--muted); font-size: 12.5px; }
 .notes { color: var(--muted); font-size: 12.5px; text-wrap: pretty; }
 .notes ul { margin: 6px 0 0; padding-left: 18px; }
+.tabs { display: flex; gap: 4px; margin: 12px 0; border-bottom: 1px solid var(--frame); }
+.tabs button { border: 1px solid transparent; border-bottom: 0; background: none; padding: 6px 16px; color: var(--muted); border-radius: 2px 2px 0 0; }
+.tabs button[aria-selected=true] { background: var(--accent-soft); color: var(--ink); border-color: var(--frame); }
+.r-filters { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, 110px); gap: 6px; }
+.r-bulk { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.r-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px 6px; }
+.rt { position: relative; display: grid; gap: 2px; padding: 3px; border: 1px dashed var(--line); border-radius: 3px; background: none; font-size: 11px; line-height: 1.25; color: var(--muted); }
+.rt img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; opacity: .4; }
+.rt i { position: absolute; left: 3px; top: 3px; padding: 0 4px; font-style: normal; font-size: 10.5px; display: none; }
+.rt[data-st="1"] { border: 1px solid var(--accent); color: var(--ink); }
+.rt[data-st="2"] { border: 1px solid var(--gold); color: var(--ink); }
+.rt[data-st="1"] img, .rt[data-st="2"] img { opacity: 1; }
+.rt[data-st="1"] i { display: block; background: var(--accent-soft); color: var(--accent); }
+.rt[data-st="2"] i { display: block; background: var(--gold-soft); color: var(--gold); }
+.r-code { display: grid; gap: 6px; margin-top: 8px; }
+.r-code textarea { width: 100%; min-height: 72px; padding: 7px 9px; border: 1px solid var(--edge); border-radius: 2px; background: var(--bg); color: inherit; font: 12px var(--mono); }
+.fill-btn { border: 1px solid var(--accent); background: var(--accent-soft); color: var(--ink); border-radius: 2px; padding: 7px 10px; width: 100%; }
+.fill-btn:hover { border-color: var(--ink); }
 .team-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .own-head { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
 .own-head .label { flex: 1 1 240px; }
@@ -174,7 +192,7 @@ tfoot td { font-weight: 500; border-bottom: 0; }
 details summary { cursor: pointer; }
 .link { border: 0; background: none; color: var(--accent); padding: 0; text-decoration: underline; }
 @media (max-width: 860px) { .cols { grid-template-columns: minmax(0, 1fr); } .big { font-size: 26px; } }
-@media (max-width: 560px) { .formation { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; } }
+@media (max-width: 560px) { .r-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); } .r-filters input { grid-column: 1 / -1; } .formation { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 8px; } }
 </style>
 
 <div class="wrap">
@@ -183,6 +201,27 @@ details summary { cursor: pointer; }
     <p><span class="nb">选好 6 个英灵，自动算出带哪几张羁绊礼装全队拿得最多。</span><span class="nb">数据为日服，礼装按勾选持有、满破计算。</span></p>
     <p class="unofficial">非官方粉丝工具，与 Fate/Grand Order 官方无关</p>
   </header>
+  <nav class="tabs" role="tablist" aria-label="页面">
+    <button type="button" role="tab" id="tab-team" aria-selected="true" aria-controls="page-team">配队</button>
+    <button type="button" role="tab" id="tab-roster" aria-selected="false" aria-controls="page-roster">我的从者</button>
+  </nav>
+  <section class="panel" id="page-roster" role="tabpanel" aria-labelledby="tab-roster" hidden>
+    <div class="team-head"><h2>我的从者</h2><span class="label" id="rcount"></span></div>
+    <p class="legend">点头像切换：没有 → 已有 → 满绊。配队页“填满空位”只会从“已有”的从者里挑。记录存在这个浏览器里，换设备时用最下面的导出和导入。</p>
+    <div class="r-filters">
+      <input type="search" id="rq" placeholder="搜索中文、日文或英文名" autocomplete="off" aria-label="搜索从者">
+      <select class="plain" id="rc" aria-label="按职阶筛选"></select>
+      <select class="plain" id="rr" aria-label="按星级筛选"><option value="">全部星级</option><option value="5">★5</option><option value="4">★4</option><option value="3">★3</option><option value="2">★2</option><option value="1">★1</option><option value="0">★0</option></select>
+      <select class="plain" id="rs" aria-label="按状态筛选"><option value="">全部状态</option><option value="0">没有</option><option value="1">已有</option><option value="2">满绊</option></select>
+    </div>
+    <div class="r-bulk"><span class="label" id="rshown"></span><button class="mini" type="button" data-set="1">全设为已有</button><button class="mini" type="button" data-set="2">全设为满绊</button><button class="mini" type="button" data-set="0">全设为没有</button></div>
+    <div class="r-grid" id="rgrid"></div>
+    <details><summary class="label">导出或导入记录</summary>
+      <div class="r-code"><textarea id="rcode" aria-label="从者记录文字" placeholder="点“导出”生成文字；或把文字贴到这里再点“导入”"></textarea>
+      <div class="r-bulk"><button class="mini" type="button" id="rexport">导出</button><button class="mini" type="button" id="rimport">导入</button><span class="label" id="rmsg" role="status"></span></div></div>
+    </details>
+  </section>
+  <div id="page-team" role="tabpanel" aria-labelledby="tab-team" class="group" style="gap:18px">
   <div class="cols">
     <section class="panel" aria-label="编队">
       <div class="team-head"><h2>编队</h2><button class="mini" id="clear" type="button" title="移除全部英灵，并清掉助战礼装">清空编队</button></div>
@@ -192,6 +231,8 @@ details summary { cursor: pointer; }
         <div class="results" id="results" hidden></div>
       </div>
       <div class="slots" id="slots"></div>
+      <button class="fill-btn" id="fill" type="button">填满空位并配礼装</button>
+      <div class="label" id="fillnote" role="status" hidden></div>
       <div class="settings">
         <div class="field"><span class="label">普通羁绊礼装位</span>
           <div class="stepper"><button id="sm" aria-label="减少礼装位">−</button><output id="sn"></output><button id="sp" aria-label="增加礼装位">+</button></div></div>
@@ -218,11 +259,13 @@ details summary { cursor: pointer; }
     <div class="own-head"><h2>我的礼装</h2><span class="label" id="owncount"></span></div>
     <div id="owned" class="group" style="gap:14px"></div>
   </section>
+  </div>
   <footer class="notes">
     计算规则
     <ul>
       <li>单人羁绊 =（⌊⌊基础羁绊 ×（1 + 位置加成）⌋ ×（1 + 礼装加成之和）⌋ + 固定点数）× 茶壶倍率，⌊⌋ 表示去掉小数。前排 +20%；助战在前排时，其他 5 人全部再 +4%。茶壶对全队生效，包括后排，星见 ×2，月见 ×3，一次出击只能用一个。</li>
       <li>绊 15 及以上的从者自带职阶技能“夢火の導き”：全队（包括他本人和后排）羁绊 +25%，和礼装加成相加。每名绊 15 从者各加一次，所以 2 名就是全队 +50%；放在助战位无效。</li>
+      <li>标了主刷时，礼装和空位优先让主刷的羁绊最高，主刷相同时再比全队总和；没标时直接比全队总和。填满空位只考虑羁绊和 COST，不看打手或拐的强度，结果接近最优但不保证绝对最优。</li>
       <li>羁绊礼装对全队生效，穿在谁身上都一样。总收益随每张礼装独立相加，所以直接挑收益最高的几张就是最优解。</li>
       <li>你自己的每种礼装按 1 张计算。固定点数在百分比之后加算，不乘前排倍率。只在特定活动里有效的羁绊礼装未列入。冠位从者在特殊战斗中可同时带普通礼装和奖励提升礼装，这两格都能放羁绊加成礼装，所以比普通从者多 1 张；专用的羁绊礼装位不影响计算。</li>
       <li>COST = 你的英灵 + 羁绊礼装 + 预留给战斗礼装的部分，上限按御主等级计算。助战不占 COST。官方说明冠位从者的绊礼装位和奖励提升礼装位不占 COST，所以冠位奖励位放 COST 最高的礼装；这个效果只在有冠位编成位的关卡生效。</li>
@@ -240,7 +283,7 @@ const COND = { 1949:'兽科从者', 2020:'活在当下的人类', 2052:'秩序�
 const ALIGN = [['alignmentLawful','秩序'],['alignmentNeutral','中立'],['alignmentChaotic','混沌']];
 const ALIGN2 = [['alignmentGood','善'],['alignmentBalanced','中庸'],['alignmentEvil','恶'],['alignmentMadness','狂'],['alignmentSummer','夏'],['alignmentBride','花嫁']];
 const SAMPLE = [144, 253, 206, 296, 108, 99];
-const LUNCH = 330, TEATIME = 910, TEATIME_SUPPORT = 15, FLAME = 25;
+const LUNCH = 330, TEATIME = 910, TEATIME_SUPPORT = 15, FLAME = 25, MAIN_WEIGHT = 1000;
 DATA.s.forEach(s => { s.f = `img/s/${s.n}.jpg`; });
 const byNo = new Map(DATA.s.map(s => [s.n, s]));
 const ces = DATA.ce.map(c => ({ ...c, img: `img/ce/${c.n}.png`, cond: COND[c.n] || (c.rule.length ? 'Fate/stay night 从者' : c.self ? '仅 1 人' : '全体') }));
@@ -283,7 +326,7 @@ const owns = c => !state.missing.includes(c.n);
 const ownedCes = () => ces.filter(owns);
 
 function members() {
-  return state.team.map((t, i) => { const s = t && byNo.get(t.n); return s ? { s, i, front: i < 3, sup: t.sup, grand: t.grand, noCe: t.noCe, noReward: t.noReward, flame: t.flame, on: !t.off && !t.sup } : null; }).filter(Boolean);
+  return state.team.map((t, i) => { const s = t && byNo.get(t.n); return s ? { s, i, front: i < 3, sup: t.sup, grand: t.grand, noCe: t.noCe, noReward: t.noReward, flame: t.flame, main: t.main && !t.sup, on: !t.off && !t.sup } : null; }).filter(Boolean);
 }
 const supporter = () => members().find(m => m.sup);
 // “不计入”只是不看他的点数，人还在队里，技能照样生效
@@ -299,8 +342,8 @@ function gets(m, c) {
   if (!hit(m.s, c)) return false;
   return !c.self || members().find(x => x.on)?.i === m.i;
 }
-function ceValue(c) {
-  return members().reduce((v, m) => v + (m.on && gets(m, c) ? (state.base * mult(m) * c.rate / 100 + (c.flat || 0)) * state.pot : 0), 0);
+function ceValue(c, mainWeight = 1) {
+  return members().reduce((v, m) => v + (m.on && gets(m, c) ? (state.base * mult(m) * c.rate / 100 + (c.flat || 0)) * state.pot * (m.main ? mainWeight : 1) : 0), 0);
 }
 function supValue(c) {
   return members().reduce((v, m) => v + (m.on && hit(m.s, c) ? (state.base * mult(m) * supRate(c) / 100 + supFlat(c)) * state.pot : 0), 0);
@@ -337,7 +380,7 @@ function fitCost(items, budget) {
   return [...states.values()].reduce((a, b) => b.v > a.v ? b : a).list;
 }
 function bestPicks() {
-  const items = ownedCes().map(c => ({ c, v: ceValue(c) })).filter(x => x.v > 0).sort((a, b) => b.v - a.v || b.c.rate - a.c.rate);
+  const items = ownedCes().map(c => ({ c, v: ceValue(c, MAIN_WEIGHT) })).filter(x => x.v > 0).sort((a, b) => b.v - a.v || b.c.rate - a.c.rate);
   const cap = maxCost();
   const chosen = cap == null ? items.slice(0, slotTotal()) : fitCost(items, Math.max(0, cap - servantCost() - state.keep));
   return chosen.map(x => x.c.n);
@@ -354,6 +397,8 @@ const points = (m, picks) => {
   return (Math.floor(placed * (100 + pct(m, picks)) / 100 + 1e-9) + flat(m, picks)) * state.pot;
 };
 const total = picks => members().reduce((v, m) => v + (m.on ? points(m, picks) : 0), 0);
+// 主刷放大权重，这样先比主刷，主刷相同才比全队总和
+const teamScore = picks => members().reduce((v, m) => v + (m.on ? points(m, picks) * (m.main ? MAIN_WEIGHT : 1) : 0), 0);
 const fmt = n => Math.round(n).toLocaleString('zh-CN');
 // 总羁绊从上一个数字滚动到新数字；减少动态效果时直接显示
 const calm = matchMedia('(prefers-reduced-motion: reduce)');
@@ -374,6 +419,9 @@ function rollTotal(node, to) {
   setTimeout(() => { if (id === rollId) document.querySelector('.big').textContent = fmt(to); }, 500);
 }
 
+const roster = store('bond-roster') || {};
+const rosterOf = n => roster[n] || 0;
+const saveRoster = () => store('bond-roster', roster);
 function save() { store('bond-state', { team: state.team, slots: state.slots, base: state.base, level: state.level, keep: state.keep, pot: state.pot, supCe: state.supCe, missing: state.missing }); }
 function changed() { state.picks = null; state.seats = null; state.isSample = false; save(); render(); }
 
@@ -410,13 +458,15 @@ function renderSlots() {
     if (i === 0 || i === 3) { const l = document.createElement('div'); l.className = 'rowlabel'; l.textContent = i === 0 ? '前排（羁绊 +20%）' : '后排'; box.append(l); }
     const s = slot && byNo.get(slot.n), el = document.createElement('div');
     if (!s) { el.className = 'slot empty'; el.innerHTML = '<span></span><span class="cls"></span><span>空位，在上方搜索添加</span>'; box.append(el); return; }
-    const { off, grand, sup, flame } = slot;
+    const { off, grand, sup, flame, main, auto } = slot;
     el.className = 'slot' + (off ? ' off' : '');
     const align = (ALIGN.find(a => s.t.includes(a[0]))?.[1] || '') + (ALIGN2.find(a => s.t.includes(a[0]))?.[1] || '');
-    el.innerHTML = `<button class="grip" type="button" aria-label="第 ${i + 1} 位 ${name(s)}，拖动或按上下方向键调整位置">⠿</button><span class="slot-face ${rarity(s)}${grand ? ' is-grand' : ''}"><img alt=""><i class="cls">${CLASS[s.c] || '?'}</i></span><div><div class="name"></div><small>★${s.r}${align ? ' · ' + align : ''}${s.a.length ? ' · 特性随灵基变化' : ''}</small></div><div class="btns"><button class="mini" aria-pressed="${grand}" title="冠位从者多 1 个羁绊礼装位">冠位</button><button class="mini" aria-pressed="${sup}" title="这个位置是好友助战">助战</button><button class="mini" aria-pressed="${!sup && !!flame}" title="绊 15 及以上：全队羁绊 +25%，每人各加一次，助战无效"${sup ? ' disabled' : ''}>绊15</button><button class="mini" aria-pressed="${off}" title="满羁绊的英灵可以关掉"${sup ? ' disabled' : ''}>不计入</button><button class="mini" aria-label="移除">×</button></div>`;
+    el.innerHTML = `<button class="grip" type="button" aria-label="第 ${i + 1} 位 ${name(s)}，拖动或按上下方向键调整位置">⠿</button><span class="slot-face ${rarity(s)}${grand ? ' is-grand' : ''}"><img alt=""><i class="cls">${CLASS[s.c] || '?'}</i></span><div><div class="name"></div><small>★${s.r}${align ? ' · ' + align : ''}${s.a.length ? ' · 特性随灵基变化' : ''}${auto ? ' · 自动填入' : ''}</small></div><div class="btns"><button class="mini" aria-pressed="${grand}" title="冠位从者多 1 个羁绊礼装位">冠位</button><button class="mini" aria-pressed="${sup}" title="这个位置是好友助战">助战</button><button class="mini" aria-pressed="${!sup && !!main}" title="这一队主要想刷他的羁绊"${sup ? ' disabled' : ''}>主刷</button><button class="mini" aria-pressed="${!sup && !!flame}" title="绊 15 及以上：全队羁绊 +25%，每人各加一次，助战无效"${sup ? ' disabled' : ''}>绊15</button><button class="mini" aria-pressed="${off}" title="满羁绊的英灵可以关掉"${sup ? ' disabled' : ''}>不计入</button>${auto ? '<button class="mini" title="再次填满空位时保留他">留下</button>' : ''}<button class="mini" aria-label="移除">×</button></div>`;
     el.querySelector('.name').textContent = name(s);
     el.querySelector('img').src = s.f;
-    const [g, h, f, t, x] = el.querySelectorAll('.btns button');
+    const btns = [...el.querySelectorAll('.btns button')];
+    const [g, h, mb, f, t] = btns, x = btns.at(-1);
+    if (auto) btns[5].onclick = () => { slot.auto = false; changed(); };
     const grip = el.querySelector('.grip');
     [grip, el.querySelector('.slot-face')].forEach(o => { o.onpointerdown = e => startDrag(e, i, '.slot', s.f, to => swap(i, to)); });
     grip.onkeydown = e => {
@@ -428,6 +478,7 @@ function renderSlots() {
     h.onclick = () => { state.team.forEach(v => { if (v) v.sup = v === slot && !sup; }); changed(); };
     g.onclick = () => { slot.grand = !grand; changed(); };
     f.onclick = () => { slot.flame = !flame; changed(); };
+    mb.onclick = () => { state.team.forEach(v => { if (v) v.main = v === slot && !main; }); slot.auto = false; changed(); };
     t.onclick = () => { slot.off = !off; changed(); };
     x.onclick = () => { state.team[i] = null; changed(); };
     box.append(el);
@@ -685,11 +736,116 @@ function renderOwned() {
   ownCount();
 }
 
+// 填满空位：逐个位置试候选，试完再回头改几轮，直到没有更好的换法
+function fillSeats() {
+  state.team.forEach((t, i) => { if (t?.auto) state.team[i] = null; });
+  const seats = state.team.flatMap((t, i) => t ? [] : [i]);
+  const note = text => { const n = document.getElementById('fillnote'); n.textContent = text; n.hidden = false; };
+  if (!seats.length) { changed(); note('没有空位了。'); return; }
+  const taken = new Set(state.team.filter(t => t && !t.sup).map(t => t.n));
+  // COST 和吃到的礼装都相同的从者对结果没有区别，每种留够座位数就行
+  const seen = {}, owned = ownedCes();
+  const pool = DATA.s.filter(s => rosterOf(s.n) === 1 && !taken.has(s.n)).sort((a, b) => a.cost - b.cost)
+    .filter(s => { const k = s.cost + owned.map(c => +hit(s, c)).join(''); return (seen[k] = (seen[k] || 0) + 1) <= seats.length; });
+  if (!pool.length) { changed(); note('“我的从者”里还没有可用的从者，先去那一页标记“已有”。'); return; }
+  const cap = maxCost();
+  const place = (i, s) => { state.team[i] = s ? { n: s.n, off: false, grand: false, sup: false, auto: true } : null; };
+  const bestFor = (i, reserve) => {
+    let top = null, topScore = -1;
+    const others = new Set(seats.filter(j => j !== i).map(j => state.team[j]?.n));
+    for (const s of pool) {
+      if (others.has(s.n)) continue;
+      place(i, s);
+      if (cap != null && servantCost() + state.keep + reserve > cap) continue;
+      const v = teamScore(bestPicks());
+      if (v > topScore) { top = s; topScore = v; }
+    }
+    place(i, top);
+  };
+  seats.forEach((i, k) => bestFor(i, pool[0].cost * (seats.length - k - 1)));
+  for (let round = 0; round < 3; round++) {
+    const before = seats.map(i => state.team[i]?.n).join();
+    seats.forEach(i => bestFor(i, 0));
+    if (seats.map(i => state.team[i]?.n).join() === before) break;
+  }
+  // 吃到礼装多的放前排，多拿前排 +20%
+  const picks = bestPicks(), rank = t => t ? pct({ s: byNo.get(t.n) }, picks) : -1;
+  const order = seats.map(i => state.team[i]).sort((a, b) => rank(b) - rank(a));
+  seats.forEach((i, k) => { state.team[i] = order[k]; });
+  changed();
+  const short = seats.filter(i => !state.team[i]).length;
+  note(short ? `COST 或可选从者不够，还有 ${short} 个空位没填上。` : `已填入 ${seats.length} 名从者。${members().some(m => m.main) ? '' : '没有标主刷，按全队总和挑选。'}`);
+}
+document.getElementById('fill').onclick = fillSeats;
+
+function showTab(tab) {
+  [['team', 'page-team'], ['roster', 'page-roster']].forEach(([t, p]) => {
+    document.getElementById('tab-' + t).setAttribute('aria-selected', t === tab);
+    document.getElementById(p).hidden = t !== tab;
+  });
+  if (tab === 'roster') renderRoster();
+}
+document.getElementById('tab-team').onclick = () => showTab('team');
+document.getElementById('tab-roster').onclick = () => showTab('roster');
+
+const ROSTER_TEXT = ['没有', '已有', '满绊'];
+const rosterTiles = new Map();
+function setRoster(n, st) { if (st) roster[n] = st; else delete roster[n]; }
+function paintTile(s) {
+  const b = rosterTiles.get(s.n), st = rosterOf(s.n);
+  b.dataset.st = st; b.querySelector('i').textContent = ROSTER_TEXT[st];
+  b.setAttribute('aria-label', `${name(s)}，★${s.r}，${ROSTER_TEXT[st]}`);
+}
+function rosterVisible() {
+  const q = norm(document.getElementById('rq').value), c = document.getElementById('rc').value;
+  const r = document.getElementById('rr').value, st = document.getElementById('rs').value;
+  return DATA.s.filter(s => (!c || s.c === c) && (r === '' || s.r === +r) && (st === '' || rosterOf(s.n) === +st)
+    && (!q || [s.zh, s.ja, s.en, s.k].some(v => norm(v).includes(q))));
+}
+function renderRoster() {
+  const grid = document.getElementById('rgrid');
+  if (!rosterTiles.size) DATA.s.forEach(s => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'rt';
+    const pic = document.createElement('img'); pic.alt = ''; pic.loading = 'lazy'; pic.src = s.f;
+    b.append(pic, document.createElement('i'), name(s));
+    b.onclick = () => { setRoster(s.n, (rosterOf(s.n) + 1) % 3); saveRoster(); paintTile(s); rosterCount(); };
+    rosterTiles.set(s.n, b); grid.append(b);
+  });
+  const show = new Set(rosterVisible().map(s => s.n));
+  DATA.s.forEach(s => { rosterTiles.get(s.n).hidden = !show.has(s.n); paintTile(s); });
+  document.getElementById('rshown').textContent = `当前显示 ${show.size} 名`;
+  rosterCount();
+}
+function rosterCount() {
+  const v = Object.values(roster);
+  document.getElementById('rcount').textContent = `已有 ${v.filter(x => x === 1).length} · 满绊 ${v.filter(x => x === 2).length}`;
+}
+document.querySelectorAll('[data-set]').forEach(b => { b.onclick = () => {
+  const list = rosterVisible(), st = +b.dataset.set;
+  if (!st && list.some(s => rosterOf(s.n)) && !confirm(`把当前显示的 ${list.length} 名从者全部设为“没有”？`)) return;
+  list.forEach(s => setRoster(s.n, st)); saveRoster(); renderRoster();
+}; });
+['rq', 'rc', 'rr', 'rs'].forEach(id => { document.getElementById(id).oninput = renderRoster; });
+document.getElementById('rexport').onclick = () => {
+  const ids = st => Object.keys(roster).filter(n => roster[n] === st).join(',');
+  document.getElementById('rcode').value = `fgo1;${ids(1)};${ids(2)}`;
+  document.getElementById('rmsg').textContent = '已生成，复制这段文字保存即可';
+};
+document.getElementById('rimport').onclick = () => {
+  const m = document.getElementById('rcode').value.trim().match(/^fgo1;([\d,]*);([\d,]*)$/), msg = document.getElementById('rmsg');
+  if (!m) { msg.textContent = '这段文字格式不对，记录没有改动'; return; }
+  Object.keys(roster).forEach(n => delete roster[n]);
+  [1, 2].forEach(st => m[st].split(',').forEach(n => { if (byNo.has(+n)) roster[n] = st; }));
+  saveRoster(); renderRoster(); msg.textContent = '已导入';
+};
+
 const cf = document.getElementById('cf');
 cf.add(new Option('全部职阶', ''));
 [...new Set(DATA.s.map(s => s.c))].forEach(c => { if (!c.includes('Beast') && !c.includes('Eresh')) cf.add(new Option(CLASS[c] + '阶', c)); });
 document.getElementById('q').oninput = renderResults;
 cf.onchange = renderResults;
+const rc = document.getElementById('rc');
+[...cf.options].forEach(o => rc.add(new Option(o.text, o.value)));
 // 助战礼装跟着队伍走，换一队时不留旧设置；基础羁绊、茶壶等关卡设置保留
 document.getElementById('clear').onclick = () => { state.team = state.team.map(() => null); state.supCe = []; changed(); };
 document.getElementById('sm').onclick = () => { state.slots = Math.max(1, state.slots - 1); changed(); };
