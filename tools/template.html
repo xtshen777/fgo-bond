@@ -158,6 +158,7 @@ tfoot td { font-weight: 500; border-bottom: 0; }
 .legend { color: var(--muted); font-size: 12.5px; }
 .notes { color: var(--muted); font-size: 12.5px; text-wrap: pretty; }
 .notes ul { margin: 6px 0 0; padding-left: 18px; }
+.team-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .own-head { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
 .own-head .label { flex: 1 1 240px; }
 .group { display: grid; gap: 6px; }
@@ -184,7 +185,7 @@ details summary { cursor: pointer; }
   </header>
   <div class="cols">
     <section class="panel" aria-label="编队">
-      <h2>编队</h2>
+      <div class="team-head"><h2>编队</h2><button class="mini" id="clear" type="button" title="移除全部英灵，并清掉助战礼装和绊 15 设置">清空编队</button></div>
       <div class="search">
         <input type="search" id="q" placeholder="搜索中文、日文或英文名" autocomplete="off" aria-label="搜索英灵">
         <select class="plain" id="cf" aria-label="按职阶筛选"></select>
@@ -689,6 +690,8 @@ cf.add(new Option('全部职阶', ''));
 [...new Set(DATA.s.map(s => s.c))].forEach(c => { if (!c.includes('Beast') && !c.includes('Eresh')) cf.add(new Option(CLASS[c] + '阶', c)); });
 document.getElementById('q').oninput = renderResults;
 cf.onchange = renderResults;
+// 助战礼装和绊 15 都跟着队伍走，换一队时不留旧设置；基础羁绊、茶壶等关卡设置保留
+document.getElementById('clear').onclick = () => { state.team = state.team.map(() => null); state.supCe = []; state.flame = false; changed(); };
 document.getElementById('sm').onclick = () => { state.slots = Math.max(1, state.slots - 1); changed(); };
 document.getElementById('sp').onclick = () => { state.slots = Math.min(6, state.slots + 1); changed(); };
 document.getElementById('lv').onchange = e => { const v = Math.round(+e.target.value); state.level = v ? Math.min(200, Math.max(1, v)) : null; changed(); };
