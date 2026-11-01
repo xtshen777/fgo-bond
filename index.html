@@ -20,7 +20,7 @@ img { max-width: 100%; }
 :root {
   --bg: #e6edf8; --panel: #fbfdff; --ink: #10213f; --muted: #465a7c; --line: #c3d1e6; --edge: #6f84a5; --frame: #8fa9cf;
   --accent: #17509f; --accent-soft: #dce8f8; --gold: #775200; --gold-soft: #f5e8c8; --warn: #a33c10; --bond: #b02a5b;
-  --r-gold: #b98a1e; --r-silver: #8c97a8; --r-bronze: #a8683a; --r-grand: #0a7fa8; --r-grand-soft: #bfefff; --spark: #c9920f;
+  --r-gold: #b98a1e; --r-silver: #8c97a8; --r-bronze: #a8683a; --r-grand: #4fd8f0; --r-grand-soft: #0b5f85; --on-grand: #0e1f3d; --spark: #c9920f;
   --cut: 14px;
   --display: "Noto Serif SC", "Songti SC", serif;
   --body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
@@ -113,14 +113,14 @@ button { cursor: pointer; }
 .results small { margin-left: auto; flex: none; }
 .formation { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
 .fc { display: grid; gap: 3px; align-content: start; min-width: 0; text-align: center; }
-.fc.off { opacity: .7; }
+.fc.off > :not(.fc-frame), .fc.off .fc-face > * { opacity: .7; }
 .fc-face { position: relative; aspect-ratio: 1; background: var(--accent-soft); border: 2px solid var(--rare, var(--line)); border-radius: 2px; overflow: hidden; }
 .fc-rare { position: absolute; left: 0; bottom: 0; background: var(--panel); color: var(--ink); font-family: var(--mono); font-size: 10.5px; padding: 0 3px; }
 .fc-face img { width: 100%; height: 100%; display: block; object-fit: cover; }
 .fc-face.none { border: 1px dashed var(--line); background: none; }
 .fc-badges { position: absolute; top: 2px; left: 2px; display: flex; flex-wrap: wrap; gap: 2px; }
 .pill { font-size: 10.5px; line-height: 1.4; padding: 0 4px; border-radius: 2px; font-weight: 700; }
-.pill.grand { background: var(--r-grand); color: var(--panel); }
+.pill.grand { background: var(--r-grand); color: var(--on-grand); }
 .pill.sup { background: var(--accent); color: var(--panel); }
 .fc-name { font-size: 11.5px; line-height: 1.25; min-height: 2.5em; overflow-wrap: anywhere; }
 .tile { position: relative; height: 46px; border-radius: 3px; overflow: hidden; background: var(--accent-soft); }
@@ -534,7 +534,7 @@ function renderFormation(picks) {
   state.team.forEach((slot, i) => {
     const m = ms.get(i), col = el('div', 'fc');
     if (!m) { col.append(el('div', 'fc-face none'), el('div', 'fc-name', '空位')); box.append(col); return; }
-    if (!m.on) col.classList.add('off');
+    if (!m.on && !m.sup) col.classList.add('off');
     const face = el('div', `fc-face ${rarity(m.s)}${m.grand ? ' is-grand' : ''}`), img = el('img'), badges = el('div', 'fc-badges');
     img.src = m.s.f; img.alt = '';
     if (m.grand) badges.append(el('span', 'pill grand', '冠位'));
